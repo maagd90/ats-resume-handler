@@ -24,6 +24,7 @@ class FieldChange(BaseModel):
 
 class OptimizationProposal(BaseModel):
     id: str
+    user_id: str = "default"
     status: ProposalStatus = ProposalStatus.DRAFT
     resume_score: ATSScoreBreakdown | None = None
     resume_issues: list[dict] = Field(default_factory=list)

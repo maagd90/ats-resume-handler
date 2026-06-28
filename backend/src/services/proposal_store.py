@@ -14,14 +14,27 @@ class ProposalStore:
             payload = proposal.model_dump_json()
             if row:
                 row.data = payload
+                row.user_id = proposal.user_id
             else:
-                session.add(ProposalRow(id=proposal.id, data=payload, created_at=proposal.created_at))
+                session.add(
+                    ProposalRow(
+                        id=proposal.id,
+                        user_id=proposal.user_id,
+                        data=payload,
+                        created_at=proposal.created_at,
+                    )
+                )
             session.commit()
         return proposal
 
-    def get_latest(self) -> OptimizationProposal | None:
+    def get_latest(self, user_id: str = "default") -> OptimizationProposal | None:
         with get_session() as session:
-            row = session.query(ProposalRow).order_by(ProposalRow.created_at.desc()).first()
+            row = (
+                session.query(ProposalRow)
+                .filter(ProposalRow.user_id == user_id)
+                .order_by(ProposalRow.created_at.desc())
+                .first()
+            )
             if not row:
                 return None
             return OptimizationProposal.model_validate_json(row.data)

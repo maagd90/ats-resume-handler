@@ -18,8 +18,13 @@ celery_app.conf.update(
             "task": "src.tasks.search_jobs.run_agent_cycle",
             "schedule": crontab(minute="0", hour="*/4"),
         },
+        "reset-monthly-quotas": {
+            "task": "src.tasks.maintenance.reset_monthly_quotas",
+            "schedule": crontab(minute="0", hour="0", day_of_month="1"),
+        },
     },
 )
 
 celery_app.autodiscover_tasks(["src.tasks"])
 import src.tasks.search_jobs  # noqa: F401, E402
+import src.tasks.maintenance  # noqa: F401, E402

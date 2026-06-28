@@ -24,6 +24,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://ats:ats@postgres:5432/ats_agent
       - REDIS_URL=redis://redis:6379/0
+      - FRONTEND_URL=http://localhost:3000
+      - APP_ENV=development
     volumes:
       - ./backend:/app
       - uploads:/app/uploads
@@ -40,6 +42,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://ats:ats@postgres:5432/ats_agent
       - REDIS_URL=redis://redis:6379/0
+      - FRONTEND_URL=http://localhost:3000
+      - APP_ENV=development
     volumes:
       - ./backend:/app
       - uploads:/app/uploads
@@ -57,6 +61,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://ats:ats@postgres:5432/ats_agent
       - REDIS_URL=redis://redis:6379/0
+      - FRONTEND_URL=http://localhost:3000
+      - APP_ENV=development
     volumes:
       - ./backend:/app
     depends_on:

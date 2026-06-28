@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from src.api.deps import get_current_user, require_prime
+from src.models.membership import UserAccount
 from src.services.data_store import data_store
-from src.services.usage_service import usage_service
 from src.tasks.search_jobs import run_agent_cycle
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -15,46 +16,42 @@ class AgentConfigUpdate(BaseModel):
 
 
 @router.get("/status")
-async def agent_status():
+async def agent_status(user: UserAccount = Depends(get_current_user)):
     status = data_store.get_agent_status()
-    criteria = data_store.get_criteria()
+    criteria = data_store.get_criteria(user.id)
     status.search_interval_hours = criteria.search_interval_hours
     status.stats = data_store.refresh_agent_stats()
     activity = data_store.get_activity_log(limit=20)
-    return {"status": status, "activity": activity}
+    return {"status": status, "activity": activity, "is_prime": True}
 
 
 @router.post("/start")
-async def start_agent():
-    if not usage_service.is_prime():
-        raise HTTPException(status_code=403, detail="Prime membership required for the 24/7 job agent.")
+async def start_agent(user: UserAccount = Depends(require_prime)):
     status = data_store.get_agent_status()
-    criteria = data_store.get_criteria()
+    criteria = data_store.get_criteria(user.id)
     status.is_running = True
     status.next_run_at = datetime.utcnow() + timedelta(hours=criteria.search_interval_hours)
     data_store.save_agent_status(status)
-    data_store.log_activity("Agent started.")
+    data_store.log_activity(f"Agent started for user {user.id}.")
     try:
-        run_agent_cycle.delay()
+        run_agent_cycle.delay(user.id)
     except Exception:
-        run_agent_cycle()
+        run_agent_cycle(user.id)
     return status
 
 
 @router.post("/run-now")
-async def run_now():
-    if not usage_service.is_prime():
-        raise HTTPException(status_code=403, detail="Prime membership required for the 24/7 job agent.")
+async def run_now(user: UserAccount = Depends(require_prime)):
     try:
-        task = run_agent_cycle.delay()
+        task = run_agent_cycle.delay(user.id)
         return {"task_id": task.id, "message": "Agent cycle triggered."}
     except Exception:
-        result = run_agent_cycle()
+        result = run_agent_cycle(user.id)
         return {"task_id": "sync", "message": "Agent cycle completed.", "result": result}
 
 
 @router.post("/stop")
-async def stop_agent():
+async def stop_agent(user: UserAccount = Depends(require_prime)):
     status = data_store.get_agent_status()
     status.is_running = False
     status.next_run_at = None
@@ -64,8 +61,8 @@ async def stop_agent():
 
 
 @router.put("/config")
-async def update_agent_config(payload: AgentConfigUpdate):
-    criteria = data_store.get_criteria()
+async def update_agent_config(payload: AgentConfigUpdate, user: UserAccount = Depends(require_prime)):
+    criteria = data_store.get_criteria(user.id)
     if payload.search_interval_hours is not None:
         criteria.search_interval_hours = payload.search_interval_hours
         data_store.save_criteria(criteria)

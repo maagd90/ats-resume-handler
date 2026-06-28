@@ -38,7 +38,7 @@ def _linkedin_content_from_proposal(proposal: OptimizationProposal) -> dict:
     }
 
 
-def ensure_ascii_resume_export(proposal: OptimizationProposal) -> Path:
+def ensure_ascii_resume_export(proposal: OptimizationProposal, user_id: str) -> Path:
     if not proposal.optimized_resume_path:
         raise FileNotFoundError("Resume file not found")
 
@@ -47,7 +47,7 @@ def ensure_ascii_resume_export(proposal: OptimizationProposal) -> Path:
     if ascii_path.exists():
         return ascii_path
 
-    profile = data_store.get_profile()
+    profile = data_store.get_profile(user_id)
     tmpl = _template_settings(profile)
     renderer = ResumeRenderer(tmpl)
     tailored = _tailored_from_proposal(proposal)
@@ -55,7 +55,7 @@ def ensure_ascii_resume_export(proposal: OptimizationProposal) -> Path:
     return ascii_path
 
 
-def ensure_ascii_linkedin_export(proposal: OptimizationProposal) -> Path:
+def ensure_ascii_linkedin_export(proposal: OptimizationProposal, user_id: str) -> Path:
     if not proposal.linkedin_pack_path:
         raise FileNotFoundError("LinkedIn pack not found")
 
@@ -64,7 +64,7 @@ def ensure_ascii_linkedin_export(proposal: OptimizationProposal) -> Path:
     if ascii_path.exists():
         return ascii_path
 
-    profile = data_store.get_profile()
+    profile = data_store.get_profile(user_id)
     tmpl = _template_settings(profile)
     renderer = ResumeRenderer(tmpl)
     content = _linkedin_content_from_proposal(proposal)

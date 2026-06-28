@@ -28,16 +28,16 @@ def _run_async(coro):
 
 
 @celery_app.task(name="src.tasks.search_jobs.run_agent_cycle")
-def run_agent_cycle():
+def run_agent_cycle(user_id: str = "default"):
     status = data_store.get_agent_status()
     if not status.is_running:
         return {"skipped": True, "reason": "agent paused"}
 
-    criteria = data_store.get_criteria()
+    criteria = data_store.get_criteria(user_id)
     if not criteria.is_active or not criteria.auto_apply_enabled:
         return {"skipped": True, "reason": "criteria inactive"}
 
-    profile = data_store.get_profile()
+    profile = data_store.get_profile(user_id)
     if not profile.resume_raw_text:
         data_store.log_activity("Agent cycle skipped: no resume uploaded.", "warning")
         return {"skipped": True, "reason": "no resume"}

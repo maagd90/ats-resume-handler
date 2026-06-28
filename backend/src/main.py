@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import agent, applications, criteria, jobs, linkedin, membership, optimizer, profile, proposals, resume
+from src.api.routes import agent, applications, auth, billing, criteria, jobs, linkedin, membership, optimizer, profile, proposals, resume
 from src.config import settings
 from src.db.database import init_db
 
@@ -24,6 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(billing.router, prefix="/api/v1")
 app.include_router(resume.router, prefix="/api/v1")
 app.include_router(linkedin.router, prefix="/api/v1")
 app.include_router(jobs.router, prefix="/api/v1")
@@ -38,4 +40,9 @@ app.include_router(membership.router, prefix="/api/v1")
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "2.1.0"}
+    return {
+        "status": "ok",
+        "version": "2.2.0",
+        "platform_ai": settings.llm_configured,
+        "payments": bool(settings.stripe_secret_key),
+    }

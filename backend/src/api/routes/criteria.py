@@ -1,7 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from src.api.deps import get_current_user, require_prime
 from src.models.job_criteria import JobCriteria
+from src.models.membership import UserAccount
 from src.services.data_store import data_store
 
 router = APIRouter(prefix="/criteria", tags=["criteria"])
@@ -28,13 +30,14 @@ class CriteriaUpdate(BaseModel):
 
 
 @router.get("")
-async def get_criteria():
-    return data_store.get_criteria()
+async def get_criteria(user: UserAccount = Depends(require_prime)):
+    return data_store.get_criteria(user.id)
 
 
 @router.put("")
-async def update_criteria(payload: CriteriaUpdate):
-    criteria = data_store.get_criteria()
+async def update_criteria(payload: CriteriaUpdate, user: UserAccount = Depends(require_prime)):
+    criteria = data_store.get_criteria(user.id)
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(criteria, field, value)
+    criteria.id = user.id
     return data_store.save_criteria(criteria)

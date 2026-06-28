@@ -22,7 +22,7 @@ class OptimizerPipeline:
             raise ValueError("Upload a resume before running optimization.")
 
         proposal_id = proposal_store.new_id()
-        proposal = OptimizationProposal(id=proposal_id, status=ProposalStatus.DRAFT)
+        proposal = OptimizationProposal(id=proposal_id, user_id=user_id, status=ProposalStatus.DRAFT)
         warnings: list[str] = []
 
         review = await resume_agent.review(profile)

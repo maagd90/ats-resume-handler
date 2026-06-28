@@ -1,12 +1,57 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+import { clearAccessToken, getAccessToken, setAccessToken } from "./auth";
+
+export { clearAccessToken, getAccessToken, setAccessToken };
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, options);
+  const token = getAccessToken();
+  const headers = new Headers(options?.headers);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  if (!(options?.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  if (res.status === 401) {
+    clearAccessToken();
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      window.location.href = "/login";
+    }
+  }
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${path}`);
+    let detail = await res.text();
+    try {
+      const parsed = JSON.parse(detail);
+      detail = parsed.detail || detail;
+    } catch {
+      /* plain text */
+    }
+    throw new Error(detail || `Request failed: ${path}`);
   }
   return res.json();
+}
+
+export async function register(email: string, password: string, name?: string) {
+  return request<{ access_token: string; user_id: string; email: string }>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, name }),
+  });
+}
+
+export async function login(email: string, password: string) {
+  return request<{ access_token: string; user_id: string; email: string }>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function fetchMe() {
+  return request<{ user_id: string; email: string; tier: string; is_prime: boolean }>("/api/v1/auth/me", {
+    cache: "no-store",
+  });
 }
 
 export async function fetchProfile() {
@@ -64,6 +109,29 @@ export async function fetchMembership() {
   return request("/api/v1/membership", { cache: "no-store" });
 }
 
+export async function fetchBillingPlans() {
+  return request<{ plans: BillingPlan[]; stripe_configured: boolean; free_tier: { optimizations_per_month: number } }>(
+    "/api/v1/billing/plans",
+    { cache: "no-store" }
+  );
+}
+
+export async function createCheckout(planId: string) {
+  return request<{ checkout_url: string }>(`/api/v1/billing/checkout?plan_id=${encodeURIComponent(planId)}`, {
+    method: "POST",
+  });
+}
+
+export type BillingPlan = {
+  id: string;
+  months: number;
+  price_usd: number;
+  monthly_equivalent: number;
+  label: string;
+  description: string;
+  ai_included: boolean;
+};
+
 export function getResumeDownloadUrl(proposalId: string, asciiSafe = false) {
   const params = asciiSafe ? "?ascii_safe=true" : "";
   return `${API_URL}/api/v1/proposals/${proposalId}/download/resume${params}`;
@@ -72,16 +140,6 @@ export function getResumeDownloadUrl(proposalId: string, asciiSafe = false) {
 export function getLinkedInPackDownloadUrl(proposalId: string, asciiSafe = false) {
   const params = asciiSafe ? "?ascii_safe=true" : "";
   return `${API_URL}/api/v1/proposals/${proposalId}/download/linkedin${params}`;
-}
-
-/** @deprecated Use getResumeDownloadUrl */
-export async function downloadResume(proposalId: string) {
-  return getResumeDownloadUrl(proposalId);
-}
-
-/** @deprecated Use getLinkedInPackDownloadUrl */
-export async function downloadLinkedInPack(proposalId: string) {
-  return getLinkedInPackDownloadUrl(proposalId);
 }
 
 export async function fetchCriteria() {

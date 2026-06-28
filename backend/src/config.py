@@ -23,10 +23,27 @@ class Settings(BaseSettings):
     default_min_fit_score: int = 75
     default_max_applications_per_day: int = 10
     free_optimization_limit: int = 3
+    jwt_secret: str = "change-me-in-production"
+    jwt_expire_hours: int = 168
+    app_env: str = "development"
+    frontend_url: str = "http://localhost:3000"
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    platform_ai_enabled: bool = True
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env.lower() == "production"
 
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def llm_configured(self) -> bool:
+        if self.llm_provider.lower() == "anthropic":
+            return bool(self.anthropic_api_key)
+        return bool(self.openai_api_key)
 
     @property
     def upload_path(self) -> Path:

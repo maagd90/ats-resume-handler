@@ -12,6 +12,15 @@ class Base(DeclarativeBase):
     pass
 
 
+class UserRow(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    name = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class ProfileRow(Base):
     __tablename__ = "profiles"
     id = Column(String, primary_key=True)
@@ -29,6 +38,7 @@ class CriteriaRow(Base):
 class ApplicationRow(Base):
     __tablename__ = "applications"
     id = Column(String, primary_key=True)
+    user_id = Column(String, index=True, default="default")
     job_id = Column(String, index=True)
     job_title = Column(String)
     company = Column(String)
@@ -80,6 +90,7 @@ class UserAccountRow(Base):
 class ProposalRow(Base):
     __tablename__ = "optimization_proposals"
     id = Column(String, primary_key=True)
+    user_id = Column(String, index=True, default="default")
     data = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
