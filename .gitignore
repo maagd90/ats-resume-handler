@@ -1,0 +1,16 @@
+node_modules/
+.next/
+dist/
+.env
+.env.local
+uploads/
+applications/
+backend/test_*.pdf
+backend/test_*.txt
+backend/test_*.docx
+**/test_muhammad*
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.db

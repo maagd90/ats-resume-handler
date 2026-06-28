@@ -1,0 +1,22 @@
+Jane Doe
+jane.doe@email.com | (555) 123-4567 | New York, NY
+https://linkedin.com/in/janedoe
+
+Summary
+Results-driven software engineer with 5+ years building scalable web applications using Python, FastAPI, and React.
+
+Experience
+Senior Software Engineer | TechCorp
+- Led development of API platform serving 2M+ daily requests
+- Reduced deployment time by 40% through CI/CD automation
+- Built React dashboard used by 500+ internal users
+
+Software Engineer | StartupXYZ
+- Developed Python microservices with Docker and AWS
+- Improved query performance by 35% using PostgreSQL optimization
+
+Education
+B.S. Computer Science | State University
+
+Skills
+Python, JavaScript, TypeScript, React, FastAPI, AWS, Docker, SQL, Git, Agile
