@@ -71,6 +71,19 @@ class ActivityLogRow(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class UserAccountRow(Base):
+    __tablename__ = "user_accounts"
+    id = Column(String, primary_key=True)
+    data = Column(Text, nullable=False)
+
+
+class ProposalRow(Base):
+    __tablename__ = "optimization_proposals"
+    id = Column(String, primary_key=True)
+    data = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 engine = create_engine(settings.sync_database_url, connect_args={"check_same_thread": False} if "sqlite" in settings.sync_database_url else {})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 

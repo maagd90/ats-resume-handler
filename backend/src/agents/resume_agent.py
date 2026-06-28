@@ -5,6 +5,7 @@ from src.models.profile import ATSIssue, ATSScoreBreakdown, CandidateProfile, Re
 from src.parsers.resume_parser import parse_profile_from_text
 from src.scoring.ats_checker import audit_resume, infer_target_roles
 from src.scoring.job_matcher import build_profile_document, compute_embedding
+from src.services.fact_validator import build_source_facts_block
 from src.services.llm_client import llm_client
 
 
@@ -40,6 +41,7 @@ class ResumeAgent:
         prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "resume_review.txt"
         system_prompt = prompt_path.read_text(encoding="utf-8")
         user_prompt = (
+            f"{build_source_facts_block(profile)}\n\n"
             f"Target roles: {', '.join(profile.target_roles)}\n\n"
             f"Resume:\n{text}\n\nReturn valid JSON only."
         )

@@ -47,6 +47,7 @@ class CandidateProfile(BaseModel):
     base_resume_template: Optional[str] = None
     email_for_applications: Optional[str] = None
     cover_letter_template: Optional[str] = None
+    resume_template_settings: Optional[dict] = None
     embedding: Optional[list[float]] = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -81,6 +82,8 @@ class LinkedInOptimizationResult(BaseModel):
     experience_upgrades: list[dict[str, str]]
     skills_to_add: list[str]
     analysis: dict[str, str]
+    guidance: list[dict] = Field(default_factory=list)
+    validation_warnings: list[str] = Field(default_factory=list)
 
 
 class JobListing(BaseModel):

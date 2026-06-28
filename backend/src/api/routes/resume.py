@@ -20,6 +20,9 @@ async def upload_resume(file: UploadFile = File(...), profile_id: str | None = N
     updated.base_resume_template = text
     if updated.contact.email:
         updated.email_for_applications = updated.contact.email
+    if not updated.resume_template_settings:
+        from src.models.resume_template import DEFAULT_TEMPLATE
+        updated.resume_template_settings = DEFAULT_TEMPLATE.model_dump()
     data_store.save_profile(updated)
     return updated
 

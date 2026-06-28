@@ -2,12 +2,14 @@ import Link from "next/link";
 
 const links = [
   { href: "/", label: "Dashboard" },
+  { href: "/optimize", label: "Optimize" },
   { href: "/resume", label: "Resume" },
   { href: "/linkedin", label: "LinkedIn" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/applications", label: "Applications" },
-  { href: "/settings/criteria", label: "Criteria" },
-  { href: "/settings/agent", label: "Agent" },
+  { href: "/jobs", label: "Jobs", prime: true },
+  { href: "/applications", label: "Applications", prime: true },
+  { href: "/settings/criteria", label: "Criteria", prime: true },
+  { href: "/settings/agent", label: "Agent", prime: true },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 export default function Nav() {

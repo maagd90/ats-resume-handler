@@ -46,6 +46,32 @@ export async function scoreJob(description: string) {
   return request("/api/v1/jobs/score", { method: "POST", body: form });
 }
 
+export async function runOptimizer(linkedinText: string) {
+  const form = new FormData();
+  form.append("linkedin_text", linkedinText);
+  return request("/api/v1/optimizer/run", { method: "POST", body: form });
+}
+
+export async function fetchQuota() {
+  return request("/api/v1/optimizer/quota", { cache: "no-store" });
+}
+
+export async function fetchLatestProposal() {
+  return request("/api/v1/proposals/latest", { cache: "no-store" });
+}
+
+export async function fetchMembership() {
+  return request("/api/v1/membership", { cache: "no-store" });
+}
+
+export async function downloadResume(proposalId: string) {
+  return `${API_URL}/api/v1/proposals/${proposalId}/download/resume`;
+}
+
+export async function downloadLinkedInPack(proposalId: string) {
+  return `${API_URL}/api/v1/proposals/${proposalId}/download/linkedin`;
+}
+
 export async function fetchCriteria() {
   return request("/api/v1/criteria", { cache: "no-store" });
 }

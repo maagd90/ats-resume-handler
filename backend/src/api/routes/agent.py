@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.services.data_store import data_store
+from src.services.usage_service import usage_service
 from src.tasks.search_jobs import run_agent_cycle
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -25,6 +26,8 @@ async def agent_status():
 
 @router.post("/start")
 async def start_agent():
+    if not usage_service.is_prime():
+        raise HTTPException(status_code=403, detail="Prime membership required for the 24/7 job agent.")
     status = data_store.get_agent_status()
     criteria = data_store.get_criteria()
     status.is_running = True
@@ -40,6 +43,8 @@ async def start_agent():
 
 @router.post("/run-now")
 async def run_now():
+    if not usage_service.is_prime():
+        raise HTTPException(status_code=403, detail="Prime membership required for the 24/7 job agent.")
     try:
         task = run_agent_cycle.delay()
         return {"task_id": task.id, "message": "Agent cycle triggered."}

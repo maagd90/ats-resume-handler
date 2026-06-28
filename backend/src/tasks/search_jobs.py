@@ -10,7 +10,8 @@ from src.models.application import Application, ApplicationStatus
 from src.models.profile import JobListing
 from src.services.data_store import data_store
 from src.services.jsearch_client import jsearch_client
-from src.services.resume_renderer import resume_renderer
+from src.models.resume_template import DEFAULT_TEMPLATE, ResumeTemplateSettings
+from src.services.resume_renderer import ResumeRenderer, resume_renderer
 from src.worker import celery_app
 
 
@@ -81,7 +82,11 @@ def run_agent_cycle():
 
                     tailored = _run_async(tailor_agent.tailor(profile, job.title, job.description))
                     app_dir = resume_renderer.application_dir(app.id)
-                    resume_path = resume_renderer.render_docx(profile, tailored, app_dir / "resume.docx")
+                    tmpl = DEFAULT_TEMPLATE
+                    if profile.resume_template_settings:
+                        tmpl = ResumeTemplateSettings.model_validate(profile.resume_template_settings)
+                    renderer = ResumeRenderer(tmpl)
+                    resume_path = renderer.render_docx(profile, tailored, app_dir / "resume.docx", tmpl)
 
                     cover = _run_async(
                         cover_letter_agent.generate(

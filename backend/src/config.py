@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     default_search_interval_hours: int = 4
     default_min_fit_score: int = 75
     default_max_applications_per_day: int = 10
+    free_optimization_limit: int = 3
 
     @property
     def cors_origin_list(self) -> list[str]:
