@@ -1,5 +1,6 @@
 "use client";
 
+import AiPipelinePanel from "@/components/AiPipelinePanel";
 import GuidancePanel from "@/components/GuidancePanel";
 import ImpactImprovementPlan from "@/components/ImpactImprovementPlan";
 import IssueList from "@/components/IssueList";
@@ -205,7 +206,8 @@ export default function OptimizePage() {
   return (
     <div className="flex min-h-screen flex-col bg-surface-muted">
       <header className="border-b border-border bg-surface px-6 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <AiPipelinePanel />
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="btn-outline flex items-center gap-2 text-sm">
               ← Dashboard

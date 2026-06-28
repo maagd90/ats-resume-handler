@@ -126,6 +126,10 @@ export async function fetchQuota() {
   return request("/api/v1/optimizer/quota", { cache: "no-store" });
 }
 
+export async function fetchAiPipeline() {
+  return request("/api/v1/ai/pipeline", { cache: "no-store" });
+}
+
 export async function fetchLatestProposal() {
   return request("/api/v1/proposals/latest", { cache: "no-store" });
 }
