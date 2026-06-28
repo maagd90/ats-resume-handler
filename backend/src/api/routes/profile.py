@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 
-from src.services.profile_store import profile_store
+from src.services.data_store import data_store
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
 
 @router.get("")
 async def get_profile(profile_id: str | None = None):
-    return profile_store.get_or_create(profile_id)
+    return data_store.get_profile(profile_id or "default")

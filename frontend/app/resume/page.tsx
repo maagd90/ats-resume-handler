@@ -34,7 +34,7 @@ export default function ResumePage() {
     setLoading(true);
     setError("");
     try {
-      const result = await optimizeResume();
+      const result = await optimizeResume() as any;
       setOptimized(result.optimized_text || "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Optimization failed");

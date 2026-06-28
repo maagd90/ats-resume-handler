@@ -4,6 +4,7 @@ dist/
 .env
 .env.local
 uploads/
+applications/
 __pycache__/
 *.pyc
 .venv/

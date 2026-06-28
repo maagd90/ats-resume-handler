@@ -18,7 +18,7 @@ export default function JobsPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await searchJobs(customQuery || query || undefined, customLocation || location || undefined);
+      const data = await searchJobs(customQuery || query || undefined, customLocation || location || undefined) as any;
       setJobs(data.jobs || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Job search failed");

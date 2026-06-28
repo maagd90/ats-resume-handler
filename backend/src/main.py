@@ -1,10 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import jobs, linkedin, profile, resume
+from src.api.routes import agent, applications, criteria, jobs, linkedin, profile, resume
 from src.config import settings
+from src.db.database import init_db
 
-app = FastAPI(title="ATS-Friendly Agent", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="ATS-Friendly Agent", version="2.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,8 +28,11 @@ app.include_router(resume.router, prefix="/api/v1")
 app.include_router(linkedin.router, prefix="/api/v1")
 app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(profile.router, prefix="/api/v1")
+app.include_router(criteria.router, prefix="/api/v1")
+app.include_router(applications.router, prefix="/api/v1")
+app.include_router(agent.router, prefix="/api/v1")
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "2.0.0"}

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Form
 
 from src.agents.linkedin_agent import linkedin_agent
-from src.services.profile_store import profile_store
+from src.services.data_store import data_store
 
 router = APIRouter(prefix="/linkedin", tags=["linkedin"])
 
@@ -11,7 +11,7 @@ async def analyze_linkedin(
     linkedin_text: str = Form(...),
     profile_id: str | None = Form(None),
 ):
-    profile = profile_store.get_or_create(profile_id)
+    profile = data_store.get_profile(profile_id or "default")
     result = await linkedin_agent.analyze(profile, linkedin_text)
-    profile_store.save(result.profile)
+    data_store.save_profile(result.profile)
     return result

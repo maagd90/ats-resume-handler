@@ -1,12 +1,17 @@
 # ATS-Friendly Agent
 
-AI-powered platform for resume ATS review, LinkedIn optimization, and job matching.
+Autonomous 24/7 job-hunting agent: review/optimize resume and LinkedIn, search jobs against user-defined criteria, tailor resume + cover letter per JD, and apply automatically.
 
 ## Features
 
-- **Resume Review** — Upload PDF/DOCX resumes, get ATS scores, issue detection, and AI-optimized rewrites
-- **LinkedIn Optimizer** — Paste your profile for headline, About, and experience improvements
-- **Job Matcher** — Search jobs via JSearch API and score fit against your profile
+- **Resume ATS Review** — Upload, score, optimize, and store base resume template
+- **LinkedIn Optimizer** — Profile analysis and job-hunting recommendations
+- **Job Criteria** — Configurable titles, locations, skills, thresholds, and daily caps
+- **24/7 Background Agent** — Celery + Redis scheduled job search and apply pipeline
+- **JD Tailoring** — Per-job resume variants via LLM
+- **Cover Letters** — Unique cover letter per application
+- **Auto-Apply** — Email (SMTP) and Playwright browser apply with manual queue fallback
+- **Applications Dashboard** — Track, approve, skip, and retry applications
 
 ## Quick Start
 
@@ -14,14 +19,10 @@ AI-powered platform for resume ATS review, LinkedIn optimization, and job matchi
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 uvicorn src.main:app --reload --app-dir .
 ```
-
-API docs: http://localhost:8000/docs
 
 ### Frontend
 
@@ -31,31 +32,47 @@ npm install
 npm run dev
 ```
 
-App: http://localhost:3000
-
-### Docker
+### Full Stack (Docker)
 
 ```bash
 docker compose up --build
+```
+
+Services: `backend` (8000), `frontend` (3000), `worker`, `beat`, `redis`, `postgres`
+
+### Celery Worker (local)
+
+```bash
+# Terminal 1 — Redis required
+redis-server
+
+# Terminal 2
+cd backend && celery -A src.worker.celery_app worker --loglevel=info
+
+# Terminal 3
+cd backend && celery -A src.worker.celery_app beat --loglevel=info
 ```
 
 ## Environment Variables
 
 See [`backend/.env.example`](backend/.env.example):
 
-- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` — LLM-powered review and optimization
-- `JSEARCH_API_KEY` — Live job search (falls back to mock data if unset)
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | LLM tailoring and cover letters |
+| `JSEARCH_API_KEY` | Live job search (mock fallback if unset) |
+| `REDIS_URL` | Celery broker |
+| `DATABASE_URL` | SQLite (local) or PostgreSQL (Docker) |
+| `SMTP_USER` / `SMTP_PASSWORD` | Email apply (Tier 1) |
 
-## Project Structure
+## API Endpoints
 
-```
-backend/src/
-  agents/      # Resume, LinkedIn, Job agents
-  parsers/     # Resume and LinkedIn text parsing
-  scoring/     # ATS checker and job matcher
-  api/routes/  # REST endpoints
-frontend/app/  # Dashboard, Resume, LinkedIn, Jobs pages
-```
+| Endpoint | Purpose |
+|----------|---------|
+| `GET/PUT /api/v1/criteria` | Job search criteria |
+| `GET/POST /api/v1/agent/start\|stop\|status` | Agent control |
+| `GET /api/v1/applications` | Application list |
+| `POST /api/v1/applications/{id}/approve` | Approve queued application |
 
 ## License
 

@@ -44,6 +44,9 @@ class CandidateProfile(BaseModel):
     linkedin_about: Optional[str] = None
     resume_raw_text: Optional[str] = None
     resume_file_path: Optional[str] = None
+    base_resume_template: Optional[str] = None
+    email_for_applications: Optional[str] = None
+    cover_letter_template: Optional[str] = None
     embedding: Optional[list[float]] = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
