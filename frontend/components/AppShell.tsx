@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const AUTHLESS = ["/", "/login"];
+const AUTHLESS = ["/", "/login", "/templates"];
 const FULL_BLEED = ["/optimize"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -43,7 +43,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-muted-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-surface-muted text-muted-foreground">
         Loading...
       </div>
     );
@@ -59,16 +59,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-surface-muted">
       <Sidebar email={email} isPrime={isPrime} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-8">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-surface px-8">
           <div />
           <div className="flex items-center gap-3">
             {isPrime ? (
-              <span className="badge bg-green-100 text-green-800">Prime</span>
+              <span className="badge bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300">Prime</span>
             ) : (
-              <Link href="/pricing" className="badge bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-700">
+              <Link href="/pricing" className="badge bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-800">
                 Upgrade
               </Link>
             )}

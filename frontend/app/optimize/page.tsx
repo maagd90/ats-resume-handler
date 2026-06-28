@@ -15,29 +15,60 @@ import {
   getLinkedInPackDownloadUrl,
   getResumeDownloadUrl,
   runOptimizer,
+  updateProfile,
   uploadResume,
 } from "@/lib/api";
 
 type SectionId = "personal" | "experience" | "education" | "skills" | "linkedin";
 
-function sectionProgress(profile: any, linkedinText: string, proposal: any): Record<SectionId, number> {
-  const contact = profile?.contact || {};
-  const personalFields = [contact.name, contact.email, contact.phone, profile?.summary].filter(Boolean).length;
+type ProfileDraft = {
+  contact?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    linkedin_url?: string;
+    website?: string;
+  };
+  summary?: string;
+  skills?: string[];
+  experience?: Array<{
+    title?: string;
+    company?: string;
+    location?: string;
+    start_date?: string;
+    end_date?: string;
+    bullets?: string[];
+  }>;
+  education?: Array<{
+    degree?: string;
+    institution?: string;
+    graduation_date?: string;
+    gpa?: string;
+  }>;
+  resume_raw_text?: string;
+};
+
+function emptyExperience() {
+  return { title: "", company: "", location: "", start_date: "", end_date: "", bullets: [""] };
+}
+
+function emptyEducation() {
+  return { degree: "", institution: "", graduation_date: "", gpa: "" };
+}
+
+function sectionProgress(draft: ProfileDraft | null, linkedinText: string, proposal: any): Record<SectionId, number> {
+  const contact = draft?.contact || {};
+  const personalFields = [contact.name, contact.email, contact.phone, draft?.summary].filter(Boolean).length;
   const personal = Math.min(100, Math.round((personalFields / 4) * 100));
-
-  const expCount = profile?.experience?.length || 0;
+  const expCount = draft?.experience?.filter((e) => e.title && e.company).length || 0;
   const experience = expCount ? Math.min(100, 40 + expCount * 15) : 0;
-
-  const eduCount = profile?.education?.length || 0;
+  const eduCount = draft?.education?.filter((e) => e.degree && e.institution).length || 0;
   const education = eduCount ? Math.min(100, 50 + eduCount * 25) : 0;
-
-  const skillCount = profile?.skills?.length || 0;
+  const skillCount = draft?.skills?.length || 0;
   const skills = skillCount ? Math.min(100, 30 + skillCount * 5) : 0;
-
-  let linkedin = 0;
-  if (linkedinText.trim()) linkedin += 50;
+  let linkedin = linkedinText.trim() ? 50 : 0;
   if (proposal) linkedin = 100;
-
   return { personal, experience, education, skills, linkedin };
 }
 
@@ -52,43 +83,106 @@ const SECTIONS: { id: SectionId; label: string }[] = [
 export default function OptimizePage() {
   const [activeSection, setActiveSection] = useState<SectionId>("personal");
   const [linkedinText, setLinkedinText] = useState("");
-  const [profile, setProfile] = useState<any>(null);
+  const [draft, setDraft] = useState<ProfileDraft | null>(null);
   const [proposal, setProposal] = useState<any>(null);
   const [quota, setQuota] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
   const [error, setError] = useState("");
   const [asciiSafeExport, setAsciiSafeExport] = useState(false);
+  const [skillsText, setSkillsText] = useState("");
 
   useEffect(() => {
     fetchQuota().then(setQuota).catch(() => {});
     fetchLatestProposal().then(setProposal).catch(() => {});
-    fetchProfile().then(setProfile).catch(() => {});
+    fetchProfile()
+      .then((p: any) => {
+        setDraft(p);
+        setSkillsText((p?.skills || []).join(", "));
+      })
+      .catch(() => {});
   }, []);
 
-  const progress = useMemo(
-    () => sectionProgress(profile, linkedinText, proposal),
-    [profile, linkedinText, proposal],
-  );
-
+  const progress = useMemo(() => sectionProgress(draft, linkedinText, proposal), [draft, linkedinText, proposal]);
   const overallProgress = useMemo(() => {
     const values = Object.values(progress);
     return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
   }, [progress]);
 
+  function patchDraft(patch: Partial<ProfileDraft>) {
+    setDraft((prev) => ({ ...(prev || {}), ...patch }));
+  }
+
+  function patchContact(field: string, value: string) {
+    setDraft((prev) => ({
+      ...(prev || {}),
+      contact: { ...(prev?.contact || {}), [field]: value },
+    }));
+  }
+
   async function handleUpload(file: File) {
-    const updated = await uploadResume(file);
-    setProfile(updated);
-    setActiveSection("linkedin");
+    const updated = (await uploadResume(file)) as ProfileDraft;
+    setDraft(updated);
+    setSkillsText((updated.skills || []).join(", "));
+    setActiveSection("personal");
+  }
+
+  async function persistDraft() {
+    if (!draft) return;
+    const skills = skillsText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return updateProfile({
+      contact: draft.contact,
+      summary: draft.summary ?? "",
+      skills,
+      experience: (draft.experience || []).map((e) => ({
+        title: e.title || "Role",
+        company: e.company || "Company",
+        location: e.location || null,
+        start_date: e.start_date || null,
+        end_date: e.end_date || null,
+        bullets: (e.bullets || []).filter(Boolean),
+      })),
+      education: (draft.education || []).map((e) => ({
+        degree: e.degree || "Degree",
+        institution: e.institution || "Institution",
+        graduation_date: e.graduation_date || null,
+        gpa: e.gpa || null,
+      })),
+    });
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setSaveMsg("");
+    try {
+      const saved = await persistDraft();
+      if (saved) {
+        setDraft(saved as ProfileDraft);
+        setSkillsText(((saved as any).skills || []).join(", "));
+      }
+      setSaveMsg("Draft saved.");
+    } catch (err) {
+      setSaveMsg(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleOptimize() {
     setLoading(true);
     setError("");
     try {
+      const saved = await persistDraft();
+      if (saved) setDraft(saved as ProfileDraft);
       const result = await runOptimizer(linkedinText);
       setProposal(result);
       setQuota(await fetchQuota());
-      fetchProfile().then(setProfile).catch(() => {});
+      const p = await fetchProfile();
+      setDraft(p as ProfileDraft);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Optimization failed");
     } finally {
@@ -96,45 +190,49 @@ export default function OptimizePage() {
     }
   }
 
-  const resumeTitle = profile?.contact?.name
-    ? `${profile.contact.name} — Resume`
-    : "Resume Builder";
+  const previewProfile = useMemo(() => {
+    if (!draft) return null;
+    const skills = skillsText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return { ...draft, skills: skills.length ? skills : draft.skills };
+  }, [draft, skillsText]);
+
+  const resumeTitle = draft?.contact?.name ? `${draft.contact.name} — draft` : "New resume";
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      <header className="border-b border-gray-200 bg-white px-6 py-4">
+    <div className="flex min-h-screen flex-col bg-surface-muted">
+      <header className="border-b border-border bg-surface px-6 py-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="btn-outline flex items-center gap-2 text-sm">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              Back to Dashboard
+              ← Dashboard
             </Link>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">Resume Builder</h1>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Resume editor</h1>
               <p className="text-sm text-muted-foreground">{resumeTitle}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <Link href="/templates" className="btn-ghost text-sm">Layouts</Link>
             {quota && (
               <span className="hidden text-sm text-muted-foreground sm:inline">
-                {quota.used}/{quota.limit} runs · {quota.tier}
+                {quota.used}/{quota.limit} AI runs
               </span>
             )}
             <div className="hidden items-center gap-2 sm:flex">
-              <span className="text-sm text-muted-foreground">Progress</span>
               <div className="progress-bar w-20">
                 <div className="progress-fill" style={{ width: `${overallProgress}%` }} />
               </div>
               <span className="text-sm font-medium">{overallProgress}%</span>
             </div>
+            <button type="button" onClick={handleSave} disabled={saving || !draft} className="btn-secondary text-sm">
+              {saving ? "Saving…" : "Save draft"}
+            </button>
+            {saveMsg && <span className="text-xs text-brand-600">{saveMsg}</span>}
             {proposal && (
-              <a
-                href={getResumeDownloadUrl(proposal.id, asciiSafeExport)}
-                className="btn-primary text-sm"
-                download
-              >
+              <a href={getResumeDownloadUrl(proposal.id, asciiSafeExport)} className="btn-primary text-sm" download>
                 Download
               </a>
             )}
@@ -143,9 +241,8 @@ export default function OptimizePage() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* Left panel */}
-        <div className="flex w-full flex-col border-r border-gray-200 bg-white lg:w-1/2">
-          <div className="border-b border-gray-200 p-4 sm:p-6">
+        <div className="flex w-full flex-col border-r border-border bg-surface lg:w-1/2">
+          <div className="border-b border-border p-4 sm:p-6">
             <div className="space-y-2">
               {SECTIONS.map((section) => (
                 <button
@@ -153,7 +250,7 @@ export default function OptimizePage() {
                   type="button"
                   onClick={() => setActiveSection(section.id)}
                   className={`flex w-full items-center justify-between rounded-lg p-3 text-left transition ${
-                    activeSection === section.id ? "nav-active" : "text-gray-600 hover:bg-gray-50"
+                    activeSection === section.id ? "nav-active" : "text-gray-600 hover:bg-surface-muted dark:text-gray-300"
                   }`}
                 >
                   <span className="font-medium">{section.label}</span>
@@ -171,136 +268,240 @@ export default function OptimizePage() {
           <div className="flex-1 overflow-auto p-4 sm:p-6">
             {activeSection === "personal" && (
               <div className="space-y-6">
-                <UploadZone onFile={handleUpload} />
+                <UploadZone onFile={handleUpload} label="Upload or replace resume file" />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Full Name</label>
-                    <p className="input mt-1 bg-gray-50">{profile?.contact?.name || "—"}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Email</label>
-                    <p className="input mt-1 bg-gray-50">{profile?.contact?.email || "—"}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Phone</label>
-                    <p className="input mt-1 bg-gray-50">{profile?.contact?.phone || "—"}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">LinkedIn</label>
-                    <p className="input mt-1 truncate bg-gray-50">{profile?.contact?.linkedin_url || "—"}</p>
-                  </div>
+                  {(
+                    [
+                      ["name", "Full name"],
+                      ["email", "Email"],
+                      ["phone", "Phone"],
+                      ["location", "Location"],
+                      ["linkedin_url", "LinkedIn URL"],
+                      ["website", "Website"],
+                    ] as const
+                  ).map(([field, label]) => (
+                    <div key={field}>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+                      <input
+                        className="input mt-1"
+                        value={(draft?.contact as any)?.[field] || ""}
+                        onChange={(e) => patchContact(field, e.target.value)}
+                      />
+                    </div>
+                  ))}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Professional Summary</label>
-                  <p className="textarea mt-1 min-h-[100px] bg-gray-50">{profile?.summary || "Upload a resume to populate."}</p>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Summary</label>
+                  <textarea
+                    className="textarea mt-1 min-h-[120px]"
+                    value={draft?.summary || ""}
+                    onChange={(e) => patchDraft({ summary: e.target.value })}
+                    placeholder="Professional summary…"
+                  />
                 </div>
               </div>
             )}
 
             {activeSection === "experience" && (
               <div className="space-y-4">
-                {(profile?.experience || []).length ? (
-                  profile.experience.map((exp: any, i: number) => (
-                    <div key={i} className="card p-4">
-                      <p className="font-medium text-gray-900">{exp.title || "Role"}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {exp.company}
-                        {exp.start_date && ` · ${exp.start_date}${exp.end_date ? ` – ${exp.end_date}` : ""}`}
-                      </p>
-                      <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                        {(exp.bullets || []).slice(0, 4).map((b: string, j: number) => (
-                          <li key={j}>• {b}</li>
-                        ))}
-                      </ul>
+                {(draft?.experience || []).map((exp, i) => (
+                  <div key={i} className="card space-y-3 p-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Role {i + 1}</span>
+                      <button
+                        type="button"
+                        className="text-xs text-red-600"
+                        onClick={() =>
+                          patchDraft({
+                            experience: (draft?.experience || []).filter((_, idx) => idx !== i),
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
                     </div>
-                  ))
-                ) : (
-                  <p className="py-12 text-center text-muted-foreground">Upload a resume to see experience.</p>
-                )}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        className="input"
+                        placeholder="Job title"
+                        value={exp.title || ""}
+                        onChange={(e) => {
+                          const next = [...(draft?.experience || [])];
+                          next[i] = { ...next[i], title: e.target.value };
+                          patchDraft({ experience: next });
+                        }}
+                      />
+                      <input
+                        className="input"
+                        placeholder="Company"
+                        value={exp.company || ""}
+                        onChange={(e) => {
+                          const next = [...(draft?.experience || [])];
+                          next[i] = { ...next[i], company: e.target.value };
+                          patchDraft({ experience: next });
+                        }}
+                      />
+                      <input
+                        className="input"
+                        placeholder="Start date"
+                        value={exp.start_date || ""}
+                        onChange={(e) => {
+                          const next = [...(draft?.experience || [])];
+                          next[i] = { ...next[i], start_date: e.target.value };
+                          patchDraft({ experience: next });
+                        }}
+                      />
+                      <input
+                        className="input"
+                        placeholder="End date"
+                        value={exp.end_date || ""}
+                        onChange={(e) => {
+                          const next = [...(draft?.experience || [])];
+                          next[i] = { ...next[i], end_date: e.target.value };
+                          patchDraft({ experience: next });
+                        }}
+                      />
+                    </div>
+                    <textarea
+                      className="textarea min-h-[100px]"
+                      placeholder="One bullet per line"
+                      value={(exp.bullets || []).join("\n")}
+                      onChange={(e) => {
+                        const next = [...(draft?.experience || [])];
+                        next[i] = {
+                          ...next[i],
+                          bullets: e.target.value.split("\n"),
+                        };
+                        patchDraft({ experience: next });
+                      }}
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn-outline w-full"
+                  onClick={() => patchDraft({ experience: [...(draft?.experience || []), emptyExperience()] })}
+                >
+                  + Add experience
+                </button>
               </div>
             )}
 
             {activeSection === "education" && (
               <div className="space-y-4">
-                {(profile?.education || []).length ? (
-                  profile.education.map((edu: any, i: number) => (
-                    <div key={i} className="card p-4">
-                      <p className="font-medium text-gray-900">{edu.degree || "Degree"}</p>
-                      <p className="text-sm text-muted-foreground">{edu.institution}</p>
+                {(draft?.education || []).map((edu, i) => (
+                  <div key={i} className="card space-y-3 p-4">
+                    <input
+                      className="input"
+                      placeholder="Degree"
+                      value={edu.degree || ""}
+                      onChange={(e) => {
+                        const next = [...(draft?.education || [])];
+                        next[i] = { ...next[i], degree: e.target.value };
+                        patchDraft({ education: next });
+                      }}
+                    />
+                    <input
+                      className="input"
+                      placeholder="Institution"
+                      value={edu.institution || ""}
+                      onChange={(e) => {
+                        const next = [...(draft?.education || [])];
+                        next[i] = { ...next[i], institution: e.target.value };
+                        patchDraft({ education: next });
+                      }}
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        className="input"
+                        placeholder="Graduation"
+                        value={edu.graduation_date || ""}
+                        onChange={(e) => {
+                          const next = [...(draft?.education || [])];
+                          next[i] = { ...next[i], graduation_date: e.target.value };
+                          patchDraft({ education: next });
+                        }}
+                      />
+                      <input
+                        className="input"
+                        placeholder="GPA (optional)"
+                        value={edu.gpa || ""}
+                        onChange={(e) => {
+                          const next = [...(draft?.education || [])];
+                          next[i] = { ...next[i], gpa: e.target.value };
+                          patchDraft({ education: next });
+                        }}
+                      />
                     </div>
-                  ))
-                ) : (
-                  <p className="py-12 text-center text-muted-foreground">No education detected yet.</p>
-                )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn-outline w-full"
+                  onClick={() => patchDraft({ education: [...(draft?.education || []), emptyEducation()] })}
+                >
+                  + Add education
+                </button>
               </div>
             )}
 
             {activeSection === "skills" && (
               <div>
-                {profile?.skills?.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill: string) => (
-                      <span key={skill} className="badge bg-gray-100 text-gray-700">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="py-12 text-center text-muted-foreground">Upload a resume to extract skills.</p>
-                )}
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Skills (comma-separated)</label>
+                <textarea
+                  className="textarea mt-1 min-h-[120px]"
+                  value={skillsText}
+                  onChange={(e) => setSkillsText(e.target.value)}
+                  placeholder="Python, SQL, React, …"
+                />
               </div>
             )}
 
             {activeSection === "linkedin" && (
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">LinkedIn profile text</label>
-                  <textarea
-                    rows={8}
-                    value={linkedinText}
-                    onChange={(e) => setLinkedinText(e.target.value)}
-                    className="textarea mt-1"
-                    placeholder="Paste your LinkedIn headline, About, and Experience sections..."
-                  />
-                </div>
+                <textarea
+                  rows={8}
+                  value={linkedinText}
+                  onChange={(e) => setLinkedinText(e.target.value)}
+                  className="textarea"
+                  placeholder="Paste LinkedIn headline, About, and Experience text…"
+                />
                 <button
                   type="button"
                   onClick={handleOptimize}
-                  disabled={loading || !profile?.resume_raw_text}
+                  disabled={loading || !draft?.resume_raw_text}
                   className="btn-primary w-full"
                 >
-                  {loading ? "Analyzing with AI..." : "Run Optimization"}
+                  {loading ? "Running AI optimization…" : "Run optimization"}
                 </button>
                 {error && <p className="text-sm text-red-600">{error}</p>}
-
                 {proposal && (
-                  <div className="space-y-4 border-t border-gray-100 pt-4">
-                    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                  <div className="space-y-4 border-t border-border pt-4">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-muted p-3">
                       <input
                         type="checkbox"
                         checked={asciiSafeExport}
                         onChange={(e) => setAsciiSafeExport(e.target.checked)}
                         className="mt-1"
                       />
-                      <span className="text-sm text-gray-600">ASCII-safe export for legacy ATS systems</span>
+                      <span className="text-sm text-muted-foreground">ASCII-safe export for legacy ATS</span>
                     </label>
                     <div className="flex flex-wrap gap-2">
                       <a href={getResumeDownloadUrl(proposal.id, asciiSafeExport)} className="btn-primary" download>
-                        Download Resume
+                        Download resume
                       </a>
                       {proposal.linkedin_pack_path && (
                         <a href={getLinkedInPackDownloadUrl(proposal.id, asciiSafeExport)} className="btn-secondary" download>
-                          LinkedIn Pack
+                          LinkedIn pack
                         </a>
                       )}
                     </div>
                     {proposal.resume_score && (
                       <div className="card">
-                        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">ATS Analysis</h3>
-                        <div className="flex flex-wrap items-center justify-around gap-4">
+                        <div className="flex flex-wrap justify-around gap-4">
                           <ScoreRing label="Overall" value={proposal.resume_score.overall} size={100} />
-                          <ScoreRing label="Keywords" value={proposal.resume_score.keywords} size={72} accent="#2563eb" />
-                          <ScoreRing label="Impact" value={proposal.resume_score.impact} size={72} accent="#14b8a6" />
+                          <ScoreRing label="Keywords" value={proposal.resume_score.keywords} size={72} accent="#0d9488" />
+                          <ScoreRing label="Impact" value={proposal.resume_score.impact} size={72} accent="#6366f1" />
                         </div>
                       </div>
                     )}
@@ -329,13 +530,14 @@ export default function OptimizePage() {
           </div>
         </div>
 
-        {/* Right panel — preview */}
-        <div className="w-full overflow-auto bg-gray-100 p-4 sm:p-6 lg:w-1/2">
+        <div className="w-full overflow-auto bg-surface-muted p-4 sm:p-6 lg:w-1/2">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Live Preview</h2>
-            <span className="text-xs text-muted-foreground">Inter · ATS template</span>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Live preview</h2>
+            <Link href="/templates" className="text-xs text-brand-600 hover:underline">
+              Change layout →
+            </Link>
           </div>
-          <ResumePreview profile={profile} />
+          <ResumePreview profile={previewProfile} />
         </div>
       </div>
     </div>

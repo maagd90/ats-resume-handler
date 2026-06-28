@@ -1,210 +1,117 @@
 "use client";
 
+import BrandLogo from "@/components/BrandLogo";
+import LegalNote from "@/components/LegalNote";
+import ThemeToggle from "@/components/ThemeToggle";
+import { PRODUCT_DESCRIPTION, PRODUCT_NAME } from "@/lib/brand";
 import Link from "next/link";
-import { IconResume } from "@/components/icons";
 
-const FEATURES = [
+const CAPABILITIES = [
   {
-    title: "AI Suggestions",
-    description: "Get intelligent recommendations for better bullet points and content optimization.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-      </svg>
-    ),
+    title: "Parse & score",
+    description: "Upload PDF or DOCX. We extract structure and run ATS checks on parseability, keywords, and impact.",
   },
   {
-    title: "ATS-Friendly",
-    description: "All templates are designed to pass Applicant Tracking Systems successfully.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    title: "Edit in browser",
+    description: "Adjust contact info, roles, bullets, and skills with a live preview — then save drafts to your account.",
   },
   {
-    title: "Real-Time Preview",
-    description: "See your resume update instantly as you type with our live preview feature.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
+    title: "Export safely",
+    description: "Download Word files using our original layout presets (Calibri/Arial/Helvetica, single-column, ATS-safe).",
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    name: "Sarah Johnson",
-    role: "Software Engineer",
-    company: "Google",
-    content: "This resume builder helped me land my dream job. The AI suggestions were incredibly helpful!",
-  },
-  {
-    name: "Michael Chen",
-    role: "Product Manager",
-    company: "Meta",
-    content: "Clean, professional templates that actually work. Got 3x more interview calls after using this.",
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Data Scientist",
-    company: "Netflix",
-    content: "The ATS-friendly feature is a game changer. Finally, a builder that understands modern hiring.",
-  },
-];
-
-const TEMPLATES = [
-  { name: "Modern Professional", description: "Clean and contemporary design" },
-  { name: "Executive Classic", description: "Traditional layout for senior roles" },
-  { name: "Creative Portfolio", description: "Showcase your creative work" },
+const STEPS = [
+  { step: "1", title: "Upload", body: "Drop your existing resume or start from a blank profile after sign-up." },
+  { step: "2", title: "Improve", body: "Fix sections, run AI optimization, and pick an original PassATS layout preset." },
+  { step: "3", title: "Apply", body: "Download, use LinkedIn guidance, or upgrade to Prime for autonomous job search." },
 ];
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <IconResume className="h-8 w-8 text-brand-600" />
-            <span className="text-xl font-semibold text-gray-900">ResumeBuilder</span>
-          </div>
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#features" className="text-sm text-muted-foreground transition hover:text-gray-900">Features</a>
-            <a href="#templates" className="text-sm text-muted-foreground transition hover:text-gray-900">Templates</a>
-            <a href="#testimonials" className="text-sm text-muted-foreground transition hover:text-gray-900">Reviews</a>
-            <Link href="/pricing" className="text-sm text-muted-foreground transition hover:text-gray-900">Pricing</Link>
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="btn-outline">Sign In</Link>
-              <Link href="/login?register=1" className="btn-primary">Sign Up</Link>
-            </div>
+    <div className="min-h-screen bg-surface text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-surface/90 backdrop-blur-sm">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link href="/">
+            <BrandLogo />
+          </Link>
+          <nav className="hidden items-center gap-6 md:flex">
+            <a href="#how" className="text-sm text-muted-foreground hover:text-foreground">How it works</a>
+            <Link href="/templates" className="text-sm text-muted-foreground hover:text-foreground">Layouts</Link>
+            <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground">Pricing</Link>
+            <ThemeToggle />
+            <Link href="/login" className="btn-outline text-sm">Sign in</Link>
+            <Link href="/login?register=1" className="btn-primary text-sm">Create account</Link>
           </nav>
         </div>
       </header>
 
-      <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 pb-32 pt-20">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <span className="badge mb-6 border border-brand-600/20 bg-brand-600/10 text-brand-600">
-            AI-Powered Resume Building
-          </span>
-          <h1 className="mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-6xl">
-            Create Your Resume
-            <br />
-            <span className="text-brand-600">in Minutes</span>
-          </h1>
-          <p className="mx-auto mb-8 max-w-3xl text-xl leading-relaxed text-muted-foreground">
-            Build professional, ATS-friendly resumes with AI-powered suggestions.
-            Get noticed by employers and land your dream job faster.
-          </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/login?register=1" className="btn-primary px-8 py-3 text-base shadow-lg">
-              Start Building
-            </Link>
-            <Link href="/login" className="btn-outline border-accent-teal px-8 py-3 text-base text-accent-teal hover:bg-accent-teal hover:text-white">
-              Sign In
-            </Link>
-          </div>
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-muted-foreground">
-            <span className="text-sm">50,000+ users</span>
-            <span className="text-sm">4.9/5 rating</span>
-            <span className="text-sm">ATS-Approved</span>
-          </div>
-        </div>
-      </section>
-
-      <section id="features" className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">Why Choose Our Resume Builder?</h2>
-            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-              Powerful features designed to help you create professional resumes that get results.
+      <section className="border-b border-border bg-gradient-to-b from-brand-50/80 to-surface py-20 dark:from-brand-950/40">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-2xl">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-400">
+              {PRODUCT_NAME}
             </p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            {FEATURES.map((feature) => (
-              <div key={feature.title} className="card transition hover:border-brand-600/20 hover:shadow-lg">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-600/10 text-brand-600">
-                  {feature.icon}
-                </div>
-                <h3 className="text-center text-xl font-semibold text-gray-900">{feature.title}</h3>
-                <p className="mt-3 text-center leading-relaxed text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="templates" className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">Professional Templates</h2>
-            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-              Choose from our collection of ATS-friendly templates designed by professionals.
-            </p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            {TEMPLATES.map((template) => (
-              <div key={template.name} className="card overflow-hidden p-0 transition hover:shadow-xl">
-                <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200" />
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-12 text-center">
-            <Link href="/login?register=1" className="btn-outline border-accent-teal text-accent-teal hover:bg-accent-teal hover:text-white">
-              View All Templates
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section id="testimonials" className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">Loved by Job Seekers</h2>
-            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-              See what our users say about their experience with our resume builder.
-            </p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="card transition hover:shadow-lg">
-                <p className="leading-relaxed text-gray-700">&ldquo;{t.content}&rdquo;</p>
-                <div className="mt-4 border-t border-gray-100 pt-4">
-                  <p className="font-medium text-gray-900">{t.name}</p>
-                  <p className="text-sm text-muted-foreground">{t.role} at {t.company}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-gradient-to-br from-brand-600 to-accent-teal py-20">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="mb-6 text-3xl font-bold text-white md:text-4xl">Ready to Build Your Perfect Resume?</h2>
-          <p className="mx-auto mb-8 max-w-2xl text-xl text-blue-100">
-            Join thousands of job seekers who have successfully landed their dream jobs using our platform.
-          </p>
-          <Link href="/login?register=1" className="inline-flex rounded-lg bg-white px-8 py-3 font-semibold text-brand-600 shadow-lg transition hover:bg-gray-100">
-            Get Started Free
-          </Link>
-        </div>
-      </section>
-
-      <footer className="bg-gray-900 py-12 text-gray-300">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-            <div className="flex items-center gap-2">
-              <IconResume className="h-6 w-6 text-brand-500" />
-              <span className="text-lg font-semibold text-white">ResumeBuilder</span>
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
+              Resumes that machines and humans can read
+            </h1>
+            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{PRODUCT_DESCRIPTION}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/login?register=1" className="btn-primary px-6 py-3">Start free</Link>
+              <Link href="/templates" className="btn-secondary px-6 py-3">Browse layout presets</Link>
             </div>
-            <p className="text-sm text-gray-400">© 2025 ResumeBuilder. All rights reserved.</p>
           </div>
+        </div>
+      </section>
+
+      <section id="how" className="py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">How it works</h2>
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {STEPS.map((s) => (
+              <div key={s.step} className="card">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
+                  {s.step}
+                </span>
+                <h3 className="mt-4 font-semibold text-gray-900 dark:text-white">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-border bg-surface-muted py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Built for ATS workflows</h2>
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {CAPABILITIES.map((c) => (
+              <div key={c.title} className="card">
+                <h3 className="font-semibold text-gray-900 dark:text-white">{c.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Ready when you are</h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            Free tier includes monthly optimizations and platform AI. No API keys required.
+          </p>
+          <Link href="/login?register=1" className="btn-primary mt-8 inline-flex px-8 py-3">
+            Create free account
+          </Link>
+          <LegalNote className="mx-auto mt-10 max-w-2xl text-left" />
+        </div>
+      </section>
+
+      <footer className="border-t border-border py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-4 sm:flex-row sm:items-center sm:px-6">
+          <BrandLogo />
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} {PRODUCT_NAME}</p>
         </div>
       </footer>
     </div>

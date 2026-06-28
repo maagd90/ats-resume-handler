@@ -58,6 +58,24 @@ export async function fetchProfile() {
   return request("/api/v1/profile", { cache: "no-store" });
 }
 
+export async function updateProfile(data: Record<string, unknown>) {
+  return request("/api/v1/profile", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchTemplateSettings() {
+  return request("/api/v1/optimizer/template", { cache: "no-store" });
+}
+
+export async function updateTemplateSettings(settings: Record<string, unknown>) {
+  return request("/api/v1/optimizer/template", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  });
+}
+
 export async function uploadResume(file: File) {
   const form = new FormData();
   form.append("file", file);

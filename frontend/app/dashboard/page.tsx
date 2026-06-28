@@ -81,9 +81,9 @@ export default function DashboardPage() {
           </h1>
           <p className="text-muted-foreground">Manage your resumes and track your progress.</p>
         </div>
-        <Link href="/optimize" className="btn-primary shadow-lg">
-          + Create New Resume
-        </Link>
+            <Link href="/optimize" className="btn-primary shadow-lg">
+              Open editor
+            </Link>
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -113,7 +113,7 @@ export default function DashboardPage() {
             <div className="card transition hover:shadow-lg">
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">{resumeTitle}</h3>
-                <p className="text-sm text-muted-foreground">Template: ATS Professional</p>
+                <p className="text-sm text-muted-foreground">Template: PassATS layout preset</p>
                 <span className={`badge mt-2 ${proposal ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700"}`}>
                   {proposal ? "Optimized" : "Draft"}
                 </span>

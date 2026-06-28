@@ -1,11 +1,12 @@
 "use client";
 
+import BrandLogo from "@/components/BrandLogo";
+import ThemeToggle from "@/components/ThemeToggle";
 import { login, register } from "@/lib/api";
 import { setAccessToken } from "@/lib/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { IconResume } from "@/components/icons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,9 +50,9 @@ export default function LoginPage() {
             Back to Home
           </Link>
           <Link href="/" className="flex items-center gap-2">
-            <IconResume className="h-6 w-6 text-brand-600" />
-            <span className="font-semibold text-gray-900">ResumeBuilder</span>
+            <BrandLogo />
           </Link>
+          <ThemeToggle />
         </div>
       </div>
 
@@ -61,7 +62,7 @@ export default function LoginPage() {
             {mode === "login" ? "Welcome back" : "Create your account"}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {mode === "login" ? "Sign in to your ResumeBuilder account" : "Start optimizing your resume in minutes"}
+            {mode === "login" ? "Sign in to your PassATS account" : "Create your PassATS account"}
           </p>
         </div>
 

@@ -26,6 +26,8 @@ class BulletStyle(str, Enum):
 class ResumeTemplateSettings(BaseModel):
     """ATS-safe resume template configuration — preserved across all generated resumes."""
 
+    preset_id: Optional[str] = None
+    display_name: Optional[str] = None
     font_name: FontFamily = FontFamily.CALIBRI
     font_size_body: int = 11
     font_size_name: int = 16
