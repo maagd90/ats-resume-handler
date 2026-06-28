@@ -3,23 +3,25 @@
 import { useState } from "react";
 import ScoreCard from "@/components/ScoreCard";
 import IssueList from "@/components/IssueList";
+import UploadZone from "@/components/UploadZone";
+import ResumePreview from "@/components/ResumePreview";
 import { uploadResume, reviewResume, optimizeResume } from "@/lib/api";
 
 export default function ResumePage() {
+  const [profile, setProfile] = useState<any>(null);
   const [review, setReview] = useState<any>(null);
   const [optimized, setOptimized] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function handleUpload(file: File) {
     setLoading(true);
     setError("");
     setMessage("");
     try {
-      await uploadResume(file);
+      const updated = await uploadResume(file);
+      setProfile(updated);
       const result = await reviewResume();
       setReview(result);
       setMessage("Resume uploaded and reviewed successfully.");
@@ -50,23 +52,17 @@ export default function ResumePage() {
         <p className="mt-2 text-slate-600">Upload your resume for ATS scoring, issue detection, and AI optimization.</p>
       </section>
 
-      <section className="card">
-        <label className="block text-sm font-medium text-slate-700">Upload Resume (PDF, DOCX, TXT)</label>
-        <input
-          type="file"
-          accept=".pdf,.docx,.txt"
-          onChange={handleUpload}
-          disabled={loading}
-          className="mt-3 block w-full text-sm"
-        />
-        <div className="mt-4 flex gap-2">
-          <button onClick={handleOptimize} disabled={loading || !review} className="btn-primary">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="card-elevated space-y-4">
+          <UploadZone onFile={handleUpload} />
+          <button onClick={handleOptimize} disabled={loading || !review} className="btn-primary w-full">
             Generate Optimized Resume
           </button>
-        </div>
-        {message && <p className="mt-3 text-sm text-green-700">{message}</p>}
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      </section>
+          {message && <p className="text-sm text-green-700">{message}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+        </section>
+        <ResumePreview profile={profile} compact />
+      </div>
 
       {review?.score && (
         <section>

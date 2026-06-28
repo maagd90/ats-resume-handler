@@ -2,47 +2,58 @@
 
 import { useEffect, useState } from "react";
 import GuidancePanel from "@/components/GuidancePanel";
-import ScoreCard from "@/components/ScoreCard";
-import IssueList from "@/components/IssueList";
 import ImpactImprovementPlan from "@/components/ImpactImprovementPlan";
+import IssueList from "@/components/IssueList";
+import ResumePreview from "@/components/ResumePreview";
+import ScoreRing from "@/components/ScoreRing";
+import StepProgress from "@/components/StepProgress";
+import UploadZone from "@/components/UploadZone";
 import {
+  fetchLatestProposal,
+  fetchProfile,
   fetchQuota,
+  getLinkedInPackDownloadUrl,
+  getResumeDownloadUrl,
   runOptimizer,
   uploadResume,
-  fetchLatestProposal,
-  getResumeDownloadUrl,
-  getLinkedInPackDownloadUrl,
 } from "@/lib/api";
 
 export default function OptimizePage() {
   const [linkedinText, setLinkedinText] = useState("");
+  const [profile, setProfile] = useState<any>(null);
   const [proposal, setProposal] = useState<any>(null);
   const [quota, setQuota] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [asciiSafeExport, setAsciiSafeExport] = useState(false);
+  const [step, setStep] = useState(0);
 
   useEffect(() => {
     fetchQuota().then(setQuota).catch(() => {});
     fetchLatestProposal().then(setProposal).catch(() => {});
+    fetchProfile().then(setProfile).catch(() => {});
   }, []);
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await uploadResume(file);
+  async function handleUpload(file: File) {
+    const updated = await uploadResume(file);
+    setProfile(updated);
+    setStep(1);
   }
 
   async function handleOptimize() {
     setLoading(true);
     setError("");
+    setStep(2);
     try {
       const result = await runOptimizer(linkedinText);
       setProposal(result);
+      setStep(3);
       const q = await fetchQuota();
       setQuota(q);
+      fetchProfile().then(setProfile).catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Optimization failed");
+      setStep(1);
     } finally {
       setLoading(false);
     }
@@ -50,137 +61,117 @@ export default function OptimizePage() {
 
   return (
     <div className="space-y-6">
-      <section>
-        <h1 className="text-3xl font-bold text-slate-900">Profile Optimizer</h1>
-        <p className="mt-2 text-slate-600">
-          Upload your resume, paste your LinkedIn profile, and get ATS-friendly optimizations with step-by-step guidance.
-        </p>
-        {quota && (
-          <p className="mt-1 text-sm text-slate-500">
-            Plan: {quota.tier} — {quota.used}/{quota.limit} optimizations used this month
-          </p>
-        )}
-      </section>
-
-      <section className="card">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="text-sm font-medium">Upload Resume</label>
-            <input type="file" accept=".pdf,.docx,.txt" onChange={handleUpload} className="mt-2 block w-full text-sm" />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Paste LinkedIn Profile</label>
-            <textarea
-              rows={6}
-              value={linkedinText}
-              onChange={(e) => setLinkedinText(e.target.value)}
-              className="textarea mt-2"
-              placeholder="Headline&#10;&#10;About&#10;...&#10;Experience&#10;..."
-            />
-          </div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Profile Optimizer</h1>
+          <p className="mt-1 text-sm text-slate-500">Build an ATS-friendly resume and LinkedIn profile in four steps.</p>
         </div>
-        <button onClick={handleOptimize} disabled={loading} className="btn-primary mt-4">
-          {loading ? "Optimizing..." : "Run Optimization"}
-        </button>
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      </section>
+        {quota && (
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+            <span className="text-slate-500">Plan:</span>{" "}
+            <span className="font-semibold capitalize text-brand-700">{quota.tier}</span>
+            <span className="mx-2 text-slate-300">|</span>
+            {quota.used}/{quota.limit} runs this month
+          </div>
+        )}
+      </div>
 
-      {proposal && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-6">
-            {proposal.resume_score && (
-              <section>
-                <h2 className="mb-3 text-lg font-semibold">ATS Score</h2>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <ScoreCard label="Overall" value={proposal.resume_score.overall} />
-                  <ScoreCard label="Keywords" value={proposal.resume_score.keywords} />
-                  <ScoreCard label="Impact" value={proposal.resume_score.impact} />
-                </div>
-              </section>
-            )}
+      <StepProgress current={step} />
 
-            {proposal.impact_improvement_plan && (
-              <section className="card">
-                <h2 className="text-lg font-semibold">Path to 100% Impact</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Follow these steps to strengthen quantified achievements, action verbs, and your summary.
-                </p>
-                <div className="mt-3">
-                  <ImpactImprovementPlan plan={proposal.impact_improvement_plan} />
-                </div>
-              </section>
-            )}
+      <div className="grid gap-6 xl:grid-cols-5">
+        {/* Left: inputs */}
+        <div className="space-y-5 xl:col-span-2">
+          <section className="card-elevated space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Step 1 · Resume</h2>
+            <UploadZone onFile={handleUpload} />
+          </section>
 
-            {proposal.resume_issues?.length > 0 && (
-              <section className="card">
-                <h2 className="text-lg font-semibold">Issues Found</h2>
-                <div className="mt-3">
-                  <IssueList issues={proposal.resume_issues} />
-                </div>
-              </section>
-            )}
+          <section className="card-elevated space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Step 2 · LinkedIn</h2>
+            <textarea
+              rows={8}
+              value={linkedinText}
+              onChange={(e) => {
+                setLinkedinText(e.target.value);
+                if (e.target.value.trim()) setStep(Math.max(step, 1));
+              }}
+              className="textarea"
+              placeholder={"Paste your LinkedIn headline, About, and Experience sections here..."}
+            />
+            <button onClick={handleOptimize} disabled={loading || !profile?.resume_raw_text} className="btn-primary w-full">
+              {loading ? "Analyzing with AI..." : "Run Optimization"}
+            </button>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+          </section>
 
-            <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Downloads</h2>
-
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <input
-                  type="checkbox"
-                  checked={asciiSafeExport}
-                  onChange={(e) => setAsciiSafeExport(e.target.checked)}
-                  className="mt-1"
-                />
-                <span className="text-sm text-slate-700">
-                  <span className="font-medium">ASCII-safe export (legacy ATS)</span>
-                  <span className="mt-0.5 block text-slate-500">
-                    Converts accented characters, smart quotes, and special dashes to plain ASCII.
-                    Recommended for older applicant tracking systems in the US and some enterprise HR platforms.
-                  </span>
-                </span>
+          {proposal && (
+            <section className="card-elevated space-y-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Step 4 · Download</h2>
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <input type="checkbox" checked={asciiSafeExport} onChange={(e) => setAsciiSafeExport(e.target.checked)} className="mt-1" />
+                <span className="text-sm text-slate-600">ASCII-safe export for legacy ATS systems</span>
               </label>
-
               <div className="flex flex-wrap gap-2">
-                <a
-                  href={getResumeDownloadUrl(proposal.id, asciiSafeExport)}
-                  className="btn-primary"
-                  download
-                >
-                  {asciiSafeExport ? "Download Resume (ASCII Word)" : "Download Resume (Word)"}
+                <a href={getResumeDownloadUrl(proposal.id, asciiSafeExport)} className="btn-primary" download>
+                  Download Resume
                 </a>
                 {proposal.linkedin_pack_path && (
-                  <a
-                    href={getLinkedInPackDownloadUrl(proposal.id, asciiSafeExport)}
-                    className="btn-secondary"
-                    download
-                  >
-                    {asciiSafeExport ? "Download LinkedIn Pack (ASCII Word)" : "Download LinkedIn Pack (Word)"}
+                  <a href={getLinkedInPackDownloadUrl(proposal.id, asciiSafeExport)} className="btn-secondary" download>
+                    LinkedIn Pack
                   </a>
                 )}
               </div>
-              <p className="text-xs text-slate-500">
-                Resume uses ATS-safe template: Calibri 11pt, 1-inch margins, single column, standard sections.
-                {asciiSafeExport && " ASCII mode strips non-ASCII characters for maximum parser compatibility."}
-              </p>
             </section>
+          )}
+        </div>
 
-            {[...(proposal.resume_changes || []), ...(proposal.linkedin_changes || [])].map((change: any) => (
-              <div key={`${change.section}-${change.field}`} className="card">
-                <p className="text-xs font-semibold uppercase text-slate-400">{change.section} — {change.field}</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <div>
-                    <p className="text-xs font-medium text-red-600">Before</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{change.before || "(empty)"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-green-600">After</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{change.after}</p>
-                  </div>
+        {/* Center: scores & analysis */}
+        <div className="space-y-5 xl:col-span-2">
+          {proposal?.resume_score ? (
+            <section className="card-elevated">
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">ATS Analysis</h2>
+              <div className="flex flex-wrap items-center justify-around gap-6">
+                <ScoreRing label="Overall" value={proposal.resume_score.overall} size={140} />
+                <div className="grid grid-cols-2 gap-4">
+                  <ScoreRing label="Keywords" value={proposal.resume_score.keywords} size={90} accent="#8b5cf6" />
+                  <ScoreRing label="Impact" value={proposal.resume_score.impact} size={90} accent="#a855f7" />
+                  <ScoreRing label="Structure" value={proposal.resume_score.structure} size={90} accent="#6366f1" />
+                  <ScoreRing label="Parse" value={proposal.resume_score.parseability} size={90} accent="#7c3aed" />
                 </div>
               </div>
-            ))}
-          </div>
+            </section>
+          ) : (
+            <section className="card-elevated flex min-h-[200px] items-center justify-center text-center text-sm text-slate-400">
+              Run optimization to see your ATS score breakdown
+            </section>
+          )}
 
-          <div>
+          {proposal?.impact_improvement_plan && (
+            <section className="card-elevated">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Path to 100% Impact</h2>
+              <div className="mt-3">
+                <ImpactImprovementPlan plan={proposal.impact_improvement_plan} />
+              </div>
+            </section>
+          )}
+
+          {proposal?.resume_issues?.length > 0 && (
+            <section className="card-elevated">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Issues Found</h2>
+              <div className="mt-3">
+                <IssueList issues={proposal.resume_issues} />
+              </div>
+            </section>
+          )}
+        </div>
+
+        {/* Right: preview + guidance */}
+        <div className="space-y-5 xl:col-span-1">
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Live Preview</h2>
+            <ResumePreview profile={profile} compact />
+          </section>
+          {proposal && (
             <GuidancePanel
               changes={proposal.linkedin_changes || []}
               guidance={proposal.linkedin_guidance || []}
@@ -189,9 +180,9 @@ export default function OptimizePage() {
               warnings={proposal.validation_warnings || []}
               quota={quota}
             />
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
