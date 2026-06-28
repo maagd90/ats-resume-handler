@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 from src.models.profile import ATSIssue, ATSScoreBreakdown, CandidateProfile
+from src.scoring.text_normalize import has_problematic_characters
 
 
 REQUIRED_SECTIONS = ["experience", "education", "skills"]
@@ -20,6 +21,30 @@ ACTION_VERBS = {
     "increased",
     "achieved",
     "automated",
+    "spearheaded",
+    "architected",
+    "pioneered",
+    "collaborated",
+    "drove",
+    "established",
+    "executed",
+    "launched",
+    "mentored",
+    "streamlined",
+    "transformed",
+    "validated",
+    "authored",
+    "conducted",
+    "coordinated",
+    "directed",
+    "enhanced",
+    "facilitated",
+    "generated",
+    "maintained",
+    "monitored",
+    "oversaw",
+    "resolved",
+    "standardized",
 }
 
 
@@ -44,14 +69,14 @@ def audit_resume(text: str, profile: CandidateProfile) -> tuple[ATSScoreBreakdow
 
 def _score_parseability(text: str, issues: list[ATSIssue]) -> float:
     score = 100.0
-    if re.search(r"[^\x00-\x7F]", text):
+    if has_problematic_characters(text):
         score -= 5
         issues.append(
             ATSIssue(
                 category="parseability",
                 severity="low",
-                message="Non-ASCII characters detected.",
-                suggestion="Use standard ASCII characters for maximum ATS compatibility.",
+                message="Hidden or unsupported control characters detected.",
+                suggestion="Re-save the resume as a clean PDF or DOCX. Unicode names and standard punctuation are supported worldwide.",
             )
         )
     if len(re.findall(r"\t", text)) > 3:
@@ -157,7 +182,7 @@ def _score_impact(text: str, profile: CandidateProfile, issues: list[ATSIssue]) 
                 )
             )
         action_hits = sum(
-            1 for bullet in bullets if any(verb in bullet.lower().split()[0:1] for verb in ACTION_VERBS)
+            1 for bullet in bullets if _starts_with_action_verb(bullet)
         )
         if action_hits / max(len(bullets), 1) < 0.5:
             score -= 10
@@ -180,6 +205,13 @@ def _score_impact(text: str, profile: CandidateProfile, issues: list[ATSIssue]) 
             )
         )
     return max(score, 0)
+
+
+def _starts_with_action_verb(bullet: str) -> bool:
+    first = re.sub(r"^[-•*\s]+", "", bullet.strip()).split()[0:1]
+    if not first:
+        return False
+    return first[0].lower() in ACTION_VERBS
 
 
 def infer_target_roles(profile: CandidateProfile) -> CandidateProfile:

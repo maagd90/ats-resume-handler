@@ -73,6 +73,7 @@ class ResumeReviewResult(BaseModel):
     issues: list[ATSIssue]
     section_feedback: dict[str, str]
     optimized_text: str
+    impact_improvement_plan: dict | None = None
 
 
 class LinkedInOptimizationResult(BaseModel):

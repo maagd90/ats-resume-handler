@@ -20,12 +20,11 @@ RESUME_JINJA = """{{ contact.name or 'Candidate' }}
 {% endif %}"""
 
 
+from src.scoring.text_normalize import normalize_resume_text
+
+
 def sanitize_xml_text(value: str | None) -> str:
-    if not value:
-        return ""
-    cleaned = value.replace("\x00", "")
-    cleaned = re.sub(r"[\x01-\x08\x0b\x0c\x0e-\x1f]", "", cleaned)
-    return cleaned
+    return normalize_resume_text(value or "")
 
 
 def _sanitize_value(value):

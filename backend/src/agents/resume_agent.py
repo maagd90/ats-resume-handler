@@ -4,6 +4,7 @@ from pathlib import Path
 from src.models.profile import ATSIssue, ATSScoreBreakdown, CandidateProfile, ResumeReviewResult
 from src.parsers.resume_parser import parse_profile_from_text
 from src.scoring.ats_checker import audit_resume, infer_target_roles
+from src.scoring.impact_advisor import build_impact_improvement_plan
 from src.scoring.job_matcher import build_profile_document, compute_embedding
 from src.services.fact_validator import build_source_facts_block
 from src.services.llm_client import llm_client
@@ -31,6 +32,7 @@ class ResumeAgent:
             issues=issues,
             section_feedback=section_feedback,
             optimized_text=optimized_text,
+            impact_improvement_plan=build_impact_improvement_plan(profile, score.impact),
         )
 
     async def optimize(self, profile: CandidateProfile) -> str:

@@ -27,6 +27,7 @@ class OptimizationProposal(BaseModel):
     status: ProposalStatus = ProposalStatus.DRAFT
     resume_score: ATSScoreBreakdown | None = None
     resume_issues: list[dict] = Field(default_factory=list)
+    impact_improvement_plan: dict | None = None
     resume_changes: list[FieldChange] = Field(default_factory=list)
     linkedin_changes: list[FieldChange] = Field(default_factory=list)
     linkedin_guidance: list[dict] = Field(default_factory=list)

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import GuidancePanel from "@/components/GuidancePanel";
 import ScoreCard from "@/components/ScoreCard";
 import IssueList from "@/components/IssueList";
+import ImpactImprovementPlan from "@/components/ImpactImprovementPlan";
 import {
   fetchQuota,
   runOptimizer,
@@ -95,6 +96,18 @@ export default function OptimizePage() {
                   <ScoreCard label="Overall" value={proposal.resume_score.overall} />
                   <ScoreCard label="Keywords" value={proposal.resume_score.keywords} />
                   <ScoreCard label="Impact" value={proposal.resume_score.impact} />
+                </div>
+              </section>
+            )}
+
+            {proposal.impact_improvement_plan && (
+              <section className="card">
+                <h2 className="text-lg font-semibold">Path to 100% Impact</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Follow these steps to strengthen quantified achievements, action verbs, and your summary.
+                </p>
+                <div className="mt-3">
+                  <ImpactImprovementPlan plan={proposal.impact_improvement_plan} />
                 </div>
               </section>
             )}

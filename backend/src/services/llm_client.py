@@ -95,7 +95,7 @@ class LLMClient:
                     {
                         "field": "headline",
                         "steps": [
-                            "Go to linkedin.com/in/muhammad-annus-3021a451",
+                            "Go to linkedin.com and open your profile",
                             "Click the pencil icon next to your headline",
                             "Paste the optimized headline below",
                             "Click Save",

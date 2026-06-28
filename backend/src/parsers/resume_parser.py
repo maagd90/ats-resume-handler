@@ -6,6 +6,7 @@ import pdfplumber
 from docx import Document
 
 from src.models.profile import CandidateProfile, ContactInfo, EducationEntry, ExperienceEntry
+from src.scoring.text_normalize import normalize_resume_text
 
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -15,8 +16,7 @@ GITHUB_RE = re.compile(r"(https?://(?:www\.)?github\.com/\S+)", re.I)
 
 
 def _sanitize_text(text: str) -> str:
-    text = text.replace("\x00", "")
-    return re.sub(r"[\x01-\x08\x0b\x0c\x0e-\x1f]", "", text)
+    return normalize_resume_text(text)
 
 
 def _parse_title_company_line(title_line: str) -> tuple[str, str, str | None]:
@@ -115,11 +115,17 @@ def _extract_contact(text: str, lines: list[str]) -> ContactInfo:
 
 def _split_sections(text: str) -> dict[str, str]:
     section_headers = {
-        "summary": r"^(summary|professional summary|profile)$",
-        "experience": r"^(experience|work experience|employment)$",
-        "education": r"^(education|academic background)$",
-        "skills": r"^(skills|technical skills|core competencies)$",
-        "certifications": r"^(certifications|licenses)$",
+        "summary": r"^(summary|professional summary|profile|objective|about me|"
+        r"résumé|resumen|profil|profilo|zusammenfassung|perfil|概要|简介)$",
+        "experience": r"^(experience|work experience|employment|professional experience|"
+        r"work history|career history|expérience|experiencia|experiência|erfahrung|"
+        r"経歴|工作经历|employment history)$",
+        "education": r"^(education|academic background|qualifications|"
+        r"formation|educación|escolaridade|ausbildung|学歴|教育背景)$",
+        "skills": r"^(skills|technical skills|core competencies|competencies|"
+        r"compétences|habilidades|qualificações|fähigkeiten|スキル|技能)$",
+        "certifications": r"^(certifications|licenses|certificates|"
+        r"certificaciones|certificações|zertifikate)$",
     }
     lines = text.splitlines()
     sections: dict[str, list[str]] = {}
@@ -156,8 +162,17 @@ def _extract_experience(section: str) -> list[ExperienceEntry]:
     entries: list[ExperienceEntry] = []
     i = 0
     date_pattern = re.compile(
-        r"^(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}"
-        r"|\d{4})\s*[—\-–]\s*(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4}|Current|Present)",
+        r"^(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|"
+        r"January|February|March|April|June|July|August|September|October|November|December|"
+        r"Janvier|Févr|Février|Mars|Avr|Avril|Mai|Juin|Juil|Juillet|Août|Sept|Oct|Nov|Déc|"
+        r"Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)[a-zéûî\.]*\.?\s+\d{4}"
+        r"|\d{1,2}[/.-]\d{4}|\d{4}[/.-]\d{1,2}|\d{4})\s*"
+        r"[—\-–~to]+\s*"
+        r"(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|"
+        r"January|February|March|April|June|July|August|September|October|November|December|"
+        r"Janvier|Févr|Février|Mars|Avr|Avril|Mai|Juin|Juil|Juillet|Août|Sept|Oct|Nov|Déc|"
+        r"Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic)[a-zéûî\.]*\.?\s+\d{4}"
+        r"|\d{1,2}[/.-]\d{4}|\d{4}[/.-]\d{1,2}|\d{4}|Current|Present|Now|Presente|Actuel|Heute|今)",
         re.I,
     )
 

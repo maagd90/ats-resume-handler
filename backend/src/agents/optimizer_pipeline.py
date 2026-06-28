@@ -7,6 +7,7 @@ from src.config import settings
 from src.models.optimization_proposal import FieldChange, OptimizationProposal, ProposalStatus
 from src.models.profile import CandidateProfile
 from src.models.resume_template import DEFAULT_TEMPLATE, ResumeTemplateSettings
+from src.scoring.impact_advisor import build_impact_improvement_plan
 from src.services.data_store import data_store
 from src.services.proposal_store import proposal_store
 from src.services.resume_renderer import ResumeRenderer
@@ -27,6 +28,7 @@ class OptimizerPipeline:
         review = await resume_agent.review(profile)
         proposal.resume_score = review.score
         proposal.resume_issues = [i.model_dump() for i in review.issues]
+        proposal.impact_improvement_plan = build_impact_improvement_plan(profile, review.score.impact)
 
         if review.optimized_text and review.optimized_text != (profile.resume_raw_text or ""):
             proposal.resume_changes.append(
