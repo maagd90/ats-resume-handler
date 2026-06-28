@@ -14,15 +14,52 @@ LINKEDIN_RE = re.compile(r"(https?://(?:www\.)?linkedin\.com/\S+)", re.I)
 GITHUB_RE = re.compile(r"(https?://(?:www\.)?github\.com/\S+)", re.I)
 
 
+def _sanitize_text(text: str) -> str:
+    text = text.replace("\x00", "")
+    return re.sub(r"[\x01-\x08\x0b\x0c\x0e-\x1f]", "", text)
+
+
+def _parse_title_company_line(title_line: str) -> tuple[str, str, str | None]:
+    company = "Unknown"
+    title = title_line
+    location = None
+    if "|" in title_line:
+        segments = [s.strip() for s in title_line.split("|")]
+        title = segments[0]
+        if len(segments) == 2:
+            right = segments[1]
+            if "," in right:
+                location, company = [part.strip() for part in right.split(",", 1)]
+            else:
+                company = right
+        elif len(segments) >= 3:
+            location = segments[1]
+            company = segments[2]
+    elif " at " in title_line.lower():
+        parts = re.split(r"\s+at\s+", title_line, maxsplit=1, flags=re.I)
+        title, company = parts[0].strip(), parts[1].strip()
+    return title, company, location
+
+
+def _is_valid_experience_entry(title: str, company: str, bullets: list[str]) -> bool:
+    if not title or title.lower().rstrip(".") in {"experience", "work experience", "employment"}:
+        return False
+    if company == "Unknown" and not bullets:
+        return False
+    return True
+
+
 def extract_text_from_file(file_path: Path) -> str:
     suffix = file_path.suffix.lower()
     if suffix == ".pdf":
-        return _extract_pdf(file_path)
-    if suffix == ".docx":
-        return _extract_docx(file_path)
-    if suffix == ".txt":
-        return file_path.read_text(encoding="utf-8", errors="ignore")
-    raise ValueError(f"Unsupported file type: {suffix}")
+        text = _extract_pdf(file_path)
+    elif suffix == ".docx":
+        text = _extract_docx(file_path)
+    elif suffix == ".txt":
+        text = file_path.read_text(encoding="utf-8", errors="ignore")
+    else:
+        raise ValueError(f"Unsupported file type: {suffix}")
+    return _sanitize_text(text)
 
 
 def _extract_pdf(file_path: Path) -> str:
@@ -115,13 +152,78 @@ def _extract_skills(section: str) -> list[str]:
 def _extract_experience(section: str) -> list[ExperienceEntry]:
     if not section:
         return []
-    blocks = re.split(r"\n(?=[A-Z][^\n]{0,80}(?:\|| at | - ))", section)
+    lines = [line.strip() for line in section.splitlines() if line.strip()]
     entries: list[ExperienceEntry] = []
-    for block in blocks:
-        lines = [line.strip() for line in block.splitlines() if line.strip()]
-        if not lines:
+    i = 0
+    date_pattern = re.compile(
+        r"^(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}"
+        r"|\d{4})\s*[—\-–]\s*(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4}|Current|Present)",
+        re.I,
+    )
+
+    while i < len(lines):
+        line = lines[i]
+        start_date, end_date = None, None
+        title_line = line
+
+        if date_pattern.match(line):
+            parts = re.split(r"\s*[—\-–]\s*", line, maxsplit=1)
+            start_date = parts[0].strip() if parts else None
+            end_date = parts[1].strip() if len(parts) > 1 else None
+            i += 1
+            if i >= len(lines):
+                break
+            title_line = lines[i]
+
+        company = "Unknown"
+        title = title_line
+        location = None
+        title, company, location = _parse_title_company_line(title_line)
+
+        bullets: list[str] = []
+        i += 1
+        while i < len(lines):
+            next_line = lines[i]
+            if date_pattern.match(next_line):
+                break
+            if re.match(r"^(EXPERIENCE|EDUCATION|SKILLS|CERTIFICATIONS|SUMMARY|WEBSITES)", next_line, re.I):
+                break
+            if re.match(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", next_line, re.I) and "—" in next_line:
+                break
+            if next_line.startswith(("-", "•", "*")):
+                bullets.append(next_line.lstrip("-•* ").strip())
+            elif len(next_line) > 20 and not re.match(r"^[A-Z][a-z]+ [A-Z]", next_line):
+                bullets.append(next_line)
+            elif "|" in next_line and i > 0:
+                break
+            else:
+                if len(next_line) > 30:
+                    bullets.append(next_line)
+            i += 1
+
+        if not _is_valid_experience_entry(title, company, bullets):
             continue
-        title_line = lines[0]
+
+        entries.append(
+            ExperienceEntry(
+                title=title,
+                company=company,
+                location=location,
+                start_date=start_date,
+                end_date=end_date,
+                bullets=bullets[:8],
+            )
+        )
+
+    if entries:
+        return entries[:10]
+
+    blocks = re.split(r"\n(?=[A-Z][^\n]{0,80}(?:\|| at | - ))", section)
+    for block in blocks:
+        blines = [line.strip() for line in block.splitlines() if line.strip()]
+        if not blines:
+            continue
+        title_line = blines[0]
         company = "Unknown"
         title = title_line
         if "|" in title_line:
@@ -129,7 +231,7 @@ def _extract_experience(section: str) -> list[ExperienceEntry]:
         elif " at " in title_line.lower():
             parts = re.split(r"\s+at\s+", title_line, maxsplit=1, flags=re.I)
             title, company = parts[0].strip(), parts[1].strip()
-        bullets = [line.lstrip("-•* ").strip() for line in lines[1:] if line.startswith(("-", "•", "*"))]
+        bullets = [line.lstrip("-•* ").strip() for line in blines[1:] if line.startswith(("-", "•", "*"))]
         entries.append(ExperienceEntry(title=title, company=company, bullets=bullets))
     return entries[:10]
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from docx import Document
 from docx.enum.text import WD_LINE_SPACING
@@ -19,6 +20,24 @@ RESUME_JINJA = """{{ contact.name or 'Candidate' }}
 {% endif %}"""
 
 
+def sanitize_xml_text(value: str | None) -> str:
+    if not value:
+        return ""
+    cleaned = value.replace("\x00", "")
+    cleaned = re.sub(r"[\x01-\x08\x0b\x0c\x0e-\x1f]", "", cleaned)
+    return cleaned
+
+
+def _sanitize_value(value):
+    if isinstance(value, str):
+        return sanitize_xml_text(value)
+    if isinstance(value, list):
+        return [_sanitize_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _sanitize_value(item) for key, item in value.items()}
+    return value
+
+
 class ResumeRenderer:
     def __init__(self, template_settings: ResumeTemplateSettings | None = None):
         self.template = template_settings or DEFAULT_TEMPLATE
@@ -32,7 +51,7 @@ class ResumeRenderer:
                 header_parts.append(str(val))
 
         experience = (tailored or {}).get("experience") or [e.model_dump() for e in profile.experience]
-        return {
+        return _sanitize_value({
             "contact": contact,
             "header_line": header_parts,
             "summary": (tailored or {}).get("summary") or profile.summary or "",
@@ -42,7 +61,7 @@ class ResumeRenderer:
             "certifications": profile.certifications or [],
             "sections": self.template.section_order,
             "bullet_style": self.template.bullet_style.value,
-        }
+        })
 
     def render_text(self, profile: CandidateProfile, tailored: dict | None = None) -> str:
         data = self._build_data(profile, tailored)
@@ -191,7 +210,7 @@ class ResumeRenderer:
             section.left_margin = Inches(tmpl.margin_inches)
             section.right_margin = Inches(tmpl.margin_inches)
 
-        for para_text in body.split("\n\n"):
+        for para_text in sanitize_xml_text(body).split("\n\n"):
             if not para_text.strip():
                 continue
             p = doc.add_paragraph(para_text.strip())
@@ -211,11 +230,12 @@ class ResumeRenderer:
     def render_linkedin_pack_docx(self, content: dict, output_path: Path) -> Path:
         tmpl = self.template
         doc = Document()
+        clean = _sanitize_value(content)
         sections = [
-            ("HEADLINE OPTIONS", "\n\n".join(content.get("headline_variants", []))),
-            ("OPTIMIZED ABOUT", content.get("optimized_about", "")),
-            ("EXPERIENCE UPGRADES", self._format_upgrades(content.get("experience_upgrades", []))),
-            ("SKILLS TO ADD", ", ".join(content.get("skills_to_add", []))),
+            ("HEADLINE OPTIONS", "\n\n".join(clean.get("headline_variants", []))),
+            ("OPTIMIZED ABOUT", clean.get("optimized_about", "")),
+            ("EXPERIENCE UPGRADES", self._format_upgrades(clean.get("experience_upgrades", []))),
+            ("SKILLS TO ADD", ", ".join(clean.get("skills_to_add", []))),
         ]
         for header, body in sections:
             if not body:
