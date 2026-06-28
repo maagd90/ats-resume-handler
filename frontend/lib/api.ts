@@ -134,6 +134,10 @@ export async function fetchMembership() {
   return request("/api/v1/membership", { cache: "no-store" });
 }
 
+export async function devUpgradePrime() {
+  return request("/api/v1/membership/upgrade-dev", { method: "POST" });
+}
+
 export async function fetchBillingPlans() {
   return request<{ plans: BillingPlan[]; stripe_configured: boolean; free_tier: { optimizations_per_month: number } }>(
     "/api/v1/billing/plans",

@@ -9,25 +9,42 @@ export default function AgentSettingsPage() {
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const data = await fetchAgentStatus() as any;
-    setStatus(data.status);
-    setActivity(data.activity || []);
-    setLoading(false);
+    try {
+      const data = (await fetchAgentStatus()) as any;
+      setStatus(data.status);
+      setActivity(data.activity || []);
+    } catch {
+      /* agent status is available without Prime */
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     load();
   }, []);
 
+  const [error, setError] = useState("");
+
   async function toggle() {
-    if (status?.is_running) await stopAgent();
-    else await startAgent();
-    await load();
+    setError("");
+    try {
+      if (status?.is_running) await stopAgent();
+      else await startAgent();
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Agent control requires Prime — click Enable Prime (dev) in the header.");
+    }
   }
 
   async function triggerNow() {
-    await runAgentNow();
-    await load();
+    setError("");
+    try {
+      await runAgentNow();
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Run now requires Prime.");
+    }
   }
 
   if (loading) return <p className="text-slate-600">Loading agent settings...</p>;
@@ -37,6 +54,7 @@ export default function AgentSettingsPage() {
       <section>
         <h1 className="text-3xl font-bold text-slate-900">Agent Settings</h1>
         <p className="mt-2 text-slate-600">Control the 24/7 autonomous job search and apply loop.</p>
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </section>
 
       <section className="card">

@@ -30,7 +30,7 @@ class CriteriaUpdate(BaseModel):
 
 
 @router.get("")
-async def get_criteria(user: UserAccount = Depends(require_prime)):
+async def get_criteria(user: UserAccount = Depends(get_current_user)):
     return data_store.get_criteria(user.id)
 
 

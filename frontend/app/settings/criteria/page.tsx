@@ -14,20 +14,23 @@ export default function CriteriaSettingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCriteria().then((data: any) => {
-      setCriteria(data);
-      setTitles((data.job_titles || []).join(", "));
-      setLocations((data.locations || []).join(", "));
-      setSkills((data.required_skills || []).join(", "));
-      setExcludedKeywords((data.excluded_keywords || []).join(", "));
-      setExcludedCompanies((data.excluded_companies || []).join(", "));
-      setLoading(false);
-    });
+    fetchCriteria()
+      .then((data: any) => {
+        setCriteria(data);
+        setTitles((data.job_titles || []).join(", "));
+        setLocations((data.locations || []).join(", "));
+        setSkills((data.required_skills || []).join(", "));
+        setExcludedKeywords((data.excluded_keywords || []).join(", "));
+        setExcludedCompanies((data.excluded_companies || []).join(", "));
+      })
+      .catch((err) => setMessage(err instanceof Error ? err.message : "Could not load criteria"))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    const updated = await updateCriteria({
+    try {
+      const updated = await updateCriteria({
       job_titles: titles.split(",").map((s) => s.trim()).filter(Boolean),
       locations: locations.split(",").map((s) => s.trim()).filter(Boolean),
       required_skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
@@ -40,8 +43,11 @@ export default function CriteriaSettingsPage() {
       auto_apply_enabled: criteria.auto_apply_enabled,
       search_interval_hours: Number(criteria.search_interval_hours),
     });
-    setCriteria(updated);
-    setMessage("Criteria saved successfully.");
+      setCriteria(updated);
+      setMessage("Criteria saved successfully.");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Save failed — enable Prime (dev) from the header.");
+    }
   }
 
   if (loading) return <p className="text-slate-600">Loading criteria...</p>;

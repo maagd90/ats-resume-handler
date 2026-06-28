@@ -2,7 +2,7 @@
 
 import Sidebar from "@/components/Sidebar";
 import { clearAccessToken, getAccessToken } from "@/lib/auth";
-import { fetchMe } from "@/lib/api";
+import { devUpgradePrime, fetchMe } from "@/lib/api";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,6 +16,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
   const [isPrime, setIsPrime] = useState(false);
   const [ready, setReady] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const showDevPrime = process.env.NODE_ENV === "development";
 
   const isAuthless = AUTHLESS.some((p) => pathname === p);
   const isFullBleed = FULL_BLEED.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -58,6 +60,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     router.push("/");
   }
 
+  async function unlockPrimePreview() {
+    setUnlocking(true);
+    try {
+      await devUpgradePrime();
+      const me = await fetchMe();
+      setIsPrime(me.is_prime);
+    } finally {
+      setUnlocking(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-surface-muted">
       <Sidebar email={email} isPrime={isPrime} />
@@ -68,9 +81,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {isPrime ? (
               <span className="badge bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300">Prime</span>
             ) : (
-              <Link href="/pricing" className="badge bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-800">
-                Upgrade
-              </Link>
+              <>
+                {showDevPrime && (
+                  <button
+                    type="button"
+                    onClick={unlockPrimePreview}
+                    disabled={unlocking}
+                    className="btn-secondary text-xs"
+                  >
+                    {unlocking ? "Enabling…" : "Enable Prime (dev)"}
+                  </button>
+                )}
+                <Link href="/pricing" className="badge bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-800">
+                  Upgrade
+                </Link>
+              </>
             )}
             <button type="button" onClick={logout} className="btn-ghost text-xs">
               Logout

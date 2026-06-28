@@ -45,19 +45,19 @@ export default function Sidebar({ email, isPrime }: { email?: string | null; isP
       <nav className="flex-1 space-y-1 p-4">
         {NAV.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-          const locked = item.prime && !isPrime;
+          const primeFeature = item.prime && !isPrime;
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={locked ? "/pricing" : item.href}
+              href={item.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 active ? "nav-active" : "text-gray-600 hover:bg-surface-muted dark:text-slate-400 dark:hover:bg-slate-800"
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" />
               <span className="flex-1">{item.label}</span>
-              {locked && <span className="badge-prime text-[10px]">Prime</span>}
+              {primeFeature && <span className="badge-prime text-[10px]">Prime</span>}
             </Link>
           );
         })}
