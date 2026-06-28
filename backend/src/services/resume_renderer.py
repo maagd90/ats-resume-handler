@@ -9,31 +9,23 @@ from jinja2 import Template
 from src.config import settings
 from src.models.profile import CandidateProfile
 from src.models.resume_template import DEFAULT_TEMPLATE, ResumeTemplateSettings
+from src.scoring.text_normalize import ascii_safe_for_export, normalize_resume_text
 
 
-RESUME_JINJA = """{{ contact.name or 'Candidate' }}
-{% for field in header_line %}{{ field }}{% if not loop.last %} | {% endif %}{% endfor %}
-
-{% if summary and 'summary' in sections %}SUMMARY
-{{ summary }}
-
-{% endif %}"""
+def sanitize_xml_text(value: str | None, *, ascii_safe: bool = False) -> str:
+    text = value or ""
+    if ascii_safe:
+        return ascii_safe_for_export(text)
+    return normalize_resume_text(text)
 
 
-from src.scoring.text_normalize import normalize_resume_text
-
-
-def sanitize_xml_text(value: str | None) -> str:
-    return normalize_resume_text(value or "")
-
-
-def _sanitize_value(value):
+def _sanitize_value(value, *, ascii_safe: bool = False):
     if isinstance(value, str):
-        return sanitize_xml_text(value)
+        return sanitize_xml_text(value, ascii_safe=ascii_safe)
     if isinstance(value, list):
-        return [_sanitize_value(item) for item in value]
+        return [_sanitize_value(item, ascii_safe=ascii_safe) for item in value]
     if isinstance(value, dict):
-        return {key: _sanitize_value(item) for key, item in value.items()}
+        return {key: _sanitize_value(item, ascii_safe=ascii_safe) for key, item in value.items()}
     return value
 
 
@@ -41,7 +33,13 @@ class ResumeRenderer:
     def __init__(self, template_settings: ResumeTemplateSettings | None = None):
         self.template = template_settings or DEFAULT_TEMPLATE
 
-    def _build_data(self, profile: CandidateProfile, tailored: dict | None = None) -> dict:
+    def _build_data(
+        self,
+        profile: CandidateProfile,
+        tailored: dict | None = None,
+        *,
+        ascii_safe: bool = False,
+    ) -> dict:
         contact = profile.contact.model_dump()
         header_parts = []
         for field in self.template.header_fields:
@@ -50,17 +48,20 @@ class ResumeRenderer:
                 header_parts.append(str(val))
 
         experience = (tailored or {}).get("experience") or [e.model_dump() for e in profile.experience]
-        return _sanitize_value({
-            "contact": contact,
-            "header_line": header_parts,
-            "summary": (tailored or {}).get("summary") or profile.summary or "",
-            "experience": experience,
-            "education": [e.model_dump() for e in profile.education],
-            "skills": (tailored or {}).get("skills") or profile.skills or [],
-            "certifications": profile.certifications or [],
-            "sections": self.template.section_order,
-            "bullet_style": self.template.bullet_style.value,
-        })
+        return _sanitize_value(
+            {
+                "contact": contact,
+                "header_line": header_parts,
+                "summary": (tailored or {}).get("summary") or profile.summary or "",
+                "experience": experience,
+                "education": [e.model_dump() for e in profile.education],
+                "skills": (tailored or {}).get("skills") or profile.skills or [],
+                "certifications": profile.certifications or [],
+                "sections": self.template.section_order,
+                "bullet_style": self.template.bullet_style.value,
+            },
+            ascii_safe=ascii_safe,
+        )
 
     def render_text(self, profile: CandidateProfile, tailored: dict | None = None) -> str:
         data = self._build_data(profile, tailored)
@@ -105,9 +106,11 @@ class ResumeRenderer:
         tailored: dict | None,
         output_path: Path,
         template_settings: ResumeTemplateSettings | None = None,
+        *,
+        ascii_safe: bool = False,
     ) -> Path:
         tmpl = template_settings or self.template
-        data = self._build_data(profile, tailored)
+        data = self._build_data(profile, tailored, ascii_safe=ascii_safe)
 
         doc = Document()
         for section in doc.sections:
@@ -201,7 +204,7 @@ class ResumeRenderer:
         p.paragraph_format.space_before = Pt(8)
         p.paragraph_format.space_after = Pt(4)
 
-    def render_cover_letter_docx(self, body: str, output_path: Path) -> Path:
+    def render_cover_letter_docx(self, body: str, output_path: Path, *, ascii_safe: bool = False) -> Path:
         tmpl = self.template
         doc = Document()
         for section in doc.sections:
@@ -209,7 +212,7 @@ class ResumeRenderer:
             section.left_margin = Inches(tmpl.margin_inches)
             section.right_margin = Inches(tmpl.margin_inches)
 
-        for para_text in sanitize_xml_text(body).split("\n\n"):
+        for para_text in sanitize_xml_text(body, ascii_safe=ascii_safe).split("\n\n"):
             if not para_text.strip():
                 continue
             p = doc.add_paragraph(para_text.strip())
@@ -226,10 +229,10 @@ class ResumeRenderer:
         output_path.write_text(body, encoding="utf-8")
         return output_path
 
-    def render_linkedin_pack_docx(self, content: dict, output_path: Path) -> Path:
+    def render_linkedin_pack_docx(self, content: dict, output_path: Path, *, ascii_safe: bool = False) -> Path:
         tmpl = self.template
         doc = Document()
-        clean = _sanitize_value(content)
+        clean = _sanitize_value(content, ascii_safe=ascii_safe)
         sections = [
             ("HEADLINE OPTIONS", "\n\n".join(clean.get("headline_variants", []))),
             ("OPTIMIZED ABOUT", clean.get("optimized_about", "")),

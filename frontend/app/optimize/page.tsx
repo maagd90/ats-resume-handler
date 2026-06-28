@@ -10,11 +10,9 @@ import {
   runOptimizer,
   uploadResume,
   fetchLatestProposal,
-  downloadResume,
-  downloadLinkedInPack,
+  getResumeDownloadUrl,
+  getLinkedInPackDownloadUrl,
 } from "@/lib/api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function OptimizePage() {
   const [linkedinText, setLinkedinText] = useState("");
@@ -22,6 +20,7 @@ export default function OptimizePage() {
   const [quota, setQuota] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [asciiSafeExport, setAsciiSafeExport] = useState(false);
 
   useEffect(() => {
     fetchQuota().then(setQuota).catch(() => {});
@@ -123,26 +122,44 @@ export default function OptimizePage() {
 
             <section className="card space-y-3">
               <h2 className="text-lg font-semibold">Downloads</h2>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <input
+                  type="checkbox"
+                  checked={asciiSafeExport}
+                  onChange={(e) => setAsciiSafeExport(e.target.checked)}
+                  className="mt-1"
+                />
+                <span className="text-sm text-slate-700">
+                  <span className="font-medium">ASCII-safe export (legacy ATS)</span>
+                  <span className="mt-0.5 block text-slate-500">
+                    Converts accented characters, smart quotes, and special dashes to plain ASCII.
+                    Recommended for older applicant tracking systems in the US and some enterprise HR platforms.
+                  </span>
+                </span>
+              </label>
+
               <div className="flex flex-wrap gap-2">
                 <a
-                  href={`${API_URL}/api/v1/proposals/${proposal.id}/download/resume`}
+                  href={getResumeDownloadUrl(proposal.id, asciiSafeExport)}
                   className="btn-primary"
                   download
                 >
-                  Download Resume (Word)
+                  {asciiSafeExport ? "Download Resume (ASCII Word)" : "Download Resume (Word)"}
                 </a>
                 {proposal.linkedin_pack_path && (
                   <a
-                    href={`${API_URL}/api/v1/proposals/${proposal.id}/download/linkedin`}
+                    href={getLinkedInPackDownloadUrl(proposal.id, asciiSafeExport)}
                     className="btn-secondary"
                     download
                   >
-                    Download LinkedIn Pack (Word)
+                    {asciiSafeExport ? "Download LinkedIn Pack (ASCII Word)" : "Download LinkedIn Pack (Word)"}
                   </a>
                 )}
               </div>
               <p className="text-xs text-slate-500">
                 Resume uses ATS-safe template: Calibri 11pt, 1-inch margins, single column, standard sections.
+                {asciiSafeExport && " ASCII mode strips non-ASCII characters for maximum parser compatibility."}
               </p>
             </section>
 

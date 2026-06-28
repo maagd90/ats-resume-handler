@@ -64,12 +64,24 @@ export async function fetchMembership() {
   return request("/api/v1/membership", { cache: "no-store" });
 }
 
-export async function downloadResume(proposalId: string) {
-  return `${API_URL}/api/v1/proposals/${proposalId}/download/resume`;
+export function getResumeDownloadUrl(proposalId: string, asciiSafe = false) {
+  const params = asciiSafe ? "?ascii_safe=true" : "";
+  return `${API_URL}/api/v1/proposals/${proposalId}/download/resume${params}`;
 }
 
+export function getLinkedInPackDownloadUrl(proposalId: string, asciiSafe = false) {
+  const params = asciiSafe ? "?ascii_safe=true" : "";
+  return `${API_URL}/api/v1/proposals/${proposalId}/download/linkedin${params}`;
+}
+
+/** @deprecated Use getResumeDownloadUrl */
+export async function downloadResume(proposalId: string) {
+  return getResumeDownloadUrl(proposalId);
+}
+
+/** @deprecated Use getLinkedInPackDownloadUrl */
 export async function downloadLinkedInPack(proposalId: string) {
-  return `${API_URL}/api/v1/proposals/${proposalId}/download/linkedin`;
+  return getLinkedInPackDownloadUrl(proposalId);
 }
 
 export async function fetchCriteria() {

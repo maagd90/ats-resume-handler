@@ -21,7 +21,7 @@ def normalize_resume_text(text: str) -> str:
 
 
 def ascii_safe_for_export(text: str) -> str:
-    """Optional export normalization for maximum legacy ATS compatibility."""
+    """Normalize text for legacy ATS parsers that only accept ASCII."""
     normalized = normalize_resume_text(text)
     replacements = {
         "\u2014": "-",
@@ -32,10 +32,12 @@ def ascii_safe_for_export(text: str) -> str:
         "\u201d": '"',
         "\u2022": "-",
         "\u00b7": "-",
+        "\u00a0": " ",
     }
     for src, dst in replacements.items():
         normalized = normalized.replace(src, dst)
-    return normalized.encode("ascii", "replace").decode("ascii")
+    nfkd = unicodedata.normalize("NFKD", normalized)
+    return nfkd.encode("ascii", "ignore").decode("ascii")
 
 
 def has_problematic_characters(text: str) -> bool:
