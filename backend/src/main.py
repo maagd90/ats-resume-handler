@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="ATS-Friendly Agent",
+    title="PassATS API",
     version="2.0.0",
     lifespan=lifespan,
     docs_url=None if settings.is_production else "/docs",

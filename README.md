@@ -1,13 +1,13 @@
-# ATS-Friendly Agent
+# PassATS
 
-Autonomous job-hunting platform with freemium profile optimization and Prime 24/7 agent. **Platform AI is included** — users never provide their own API keys.
+ATS resume studio with freemium profile optimization and Prime 24/7 job automation. **Platform AI is included** — users never provide their own API keys.
 
 ## Plans
 
 | Plan | Price | Includes |
 |------|-------|----------|
 | **Free** | $0 | 3 optimizations/month, ATS review, LinkedIn guidance, Word downloads |
-| **Prime 3 mo** | $29.97 | Unlimited optimizations + 24/7 agent + tailoring + auto-apply + **AI included** |
+| **Prime 3 mo** | $29.97 | Unlimited optimizations + 24/7 automation + tailoring + auto-apply + **AI included** |
 | **Prime 6 mo** | $53.94 | Same as Prime, ~10% savings |
 | **Prime 12 mo** | $95.88 | Same as Prime, best value |
 
