@@ -4,6 +4,7 @@ import httpx
 
 from src.config import settings
 from src.models.profile import JobListing
+from src.security.url_validator import safe_href_or_none
 
 
 class JSearchClient:
@@ -33,7 +34,7 @@ class JSearchClient:
                     company=item.get("employer_name") or "Unknown",
                     location=item.get("job_city") or item.get("job_country"),
                     description=item.get("job_description") or "",
-                    apply_link=item.get("job_apply_link"),
+                    apply_link=safe_href_or_none(item.get("job_apply_link")),
                     employment_type=item.get("job_employment_type"),
                     posted_at=item.get("job_posted_at_datetime_utc"),
                 )

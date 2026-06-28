@@ -5,7 +5,7 @@ import LegalNote from "@/components/LegalNote";
 import TemplatePreviewCard from "@/components/TemplatePreviewCard";
 import ThemeToggle from "@/components/ThemeToggle";
 import { fetchTemplateSettings, updateTemplateSettings } from "@/lib/api";
-import { getAccessToken } from "@/lib/auth";
+import { isLoggedIn } from "@/lib/auth";
 import { PASSATS_TEMPLATES } from "@/lib/resumeTemplates";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ export default function TemplatesPage() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    const authed = Boolean(getAccessToken());
+    const authed = isLoggedIn();
     setLoggedIn(authed);
     if (!authed) return;
     fetchTemplateSettings()
@@ -32,7 +32,7 @@ export default function TemplatesPage() {
   async function applyTemplate() {
     const preset = PASSATS_TEMPLATES.find((t) => t.id === activeId);
     if (!preset) return;
-    if (!getAccessToken()) {
+    if (!isLoggedIn()) {
       router.push("/login?register=1");
       return;
     }

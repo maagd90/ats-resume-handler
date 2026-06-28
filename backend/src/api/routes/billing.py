@@ -18,7 +18,7 @@ async def list_plans():
             "ai_included": True,
             "note": "Platform AI powers all tiers — users never need their own API key.",
         },
-        "stripe_configured": bool(settings.stripe_secret_key),
+        "stripe_configured": bool(settings.stripe_secret_key) if not settings.is_production else True,
     }
 
 
@@ -39,11 +39,15 @@ async def stripe_webhook(request: Request):
     sig = request.headers.get("stripe-signature", "")
     try:
         event = billing_service.verify_webhook(payload, sig)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid webhook signature") from None
 
     if event["type"] == "checkout.session.completed":
+        if billing_service.is_event_processed(event["id"]):
+            return {"received": True, "duplicate": True}
         session = event["data"]["object"]
-        billing_service.handle_checkout_completed(session)
+        if session.get("payment_status") == "paid":
+            billing_service.handle_checkout_completed(session)
+            billing_service.mark_event_processed(event["id"])
 
     return {"received": True}

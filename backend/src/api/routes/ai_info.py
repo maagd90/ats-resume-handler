@@ -80,7 +80,10 @@ async def get_ai_pipeline_info(_user: UserAccount = Depends(get_current_user)):
                 "detail": "DOCX resume + LinkedIn text pack from validated profile",
             },
         ],
-        "prompts": prompts,
+        "prompts": prompts if not settings.is_production else {
+            name: {"purpose": meta["purpose"], "preview": "", "char_count": meta["char_count"]}
+            for name, meta in prompts.items()
+        },
         "fallback_behavior": (
             "If OPENAI_API_KEY is not set, llm_configured is false and optimize endpoints return 503. "
             "Internal dev fallback returns mock JSON without calling OpenAI."

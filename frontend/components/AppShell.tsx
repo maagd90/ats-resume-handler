@@ -1,7 +1,7 @@
 "use client";
 
 import Sidebar from "@/components/Sidebar";
-import { clearAccessToken, getAccessToken } from "@/lib/auth";
+import { clearAccessToken, isLoggedIn } from "@/lib/auth";
 import { devUpgradePrime, fetchMe } from "@/lib/api";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -21,14 +21,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAuthless = AUTHLESS.some((p) => pathname === p);
   const isFullBleed = FULL_BLEED.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-  const isPublicPricing = pathname === "/pricing" && !getAccessToken();
+  const isPublicPricing = pathname === "/pricing" && !isLoggedIn();
 
   useEffect(() => {
     if (isAuthless || isPublicPricing) {
       setReady(true);
       return;
     }
-    if (!getAccessToken()) {
+    if (!isLoggedIn()) {
       router.replace("/login");
       return;
     }

@@ -10,6 +10,7 @@ import UploadZone from "@/components/UploadZone";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  downloadAuthenticated,
   fetchLatestProposal,
   fetchProfile,
   fetchQuota,
@@ -235,9 +236,18 @@ export default function OptimizePage() {
             </button>
             {saveMsg && <span className="text-xs text-brand-600">{saveMsg}</span>}
             {proposal && (
-              <a href={getResumeDownloadUrl(proposal.id, asciiSafeExport)} className="btn-primary text-sm" download>
+              <button
+                type="button"
+                className="btn-primary text-sm"
+                onClick={() =>
+                  downloadAuthenticated(
+                    getResumeDownloadUrl(proposal.id, asciiSafeExport),
+                    "optimized-resume.docx"
+                  )
+                }
+              >
                 Download
-              </a>
+              </button>
             )}
           </div>
         </div>
@@ -502,13 +512,31 @@ export default function OptimizePage() {
                       <span className="text-sm text-muted-foreground">ASCII-safe export for legacy ATS</span>
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      <a href={getResumeDownloadUrl(proposal.id, asciiSafeExport)} className="btn-primary" download>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={() =>
+                          downloadAuthenticated(
+                            getResumeDownloadUrl(proposal.id, asciiSafeExport),
+                            "optimized-resume.docx"
+                          )
+                        }
+                      >
                         Download resume
-                      </a>
+                      </button>
                       {proposal.linkedin_pack_path && (
-                        <a href={getLinkedInPackDownloadUrl(proposal.id, asciiSafeExport)} className="btn-secondary" download>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() =>
+                            downloadAuthenticated(
+                              getLinkedInPackDownloadUrl(proposal.id, asciiSafeExport),
+                              "linkedin-pack.docx"
+                            )
+                          }
+                        >
                           LinkedIn pack
-                        </a>
+                        </button>
                       )}
                     </div>
                     {proposal.resume_score && (

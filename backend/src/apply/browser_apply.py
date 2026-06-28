@@ -2,6 +2,7 @@ from pathlib import Path
 
 from src.config import settings
 from src.models.profile import CandidateProfile
+from src.security.url_validator import validate_http_url
 
 
 class BrowserApplyExecutor:
@@ -25,7 +26,8 @@ class BrowserApplyExecutor:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
-            page.goto(apply_url, timeout=30000)
+            safe_url = validate_http_url(apply_url, field_name="apply_url")
+            page.goto(safe_url, timeout=30000)
 
             fields = {
                 "input[name*='name' i], input[id*='name' i]": profile.contact.name or "",

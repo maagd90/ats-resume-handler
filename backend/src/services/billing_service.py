@@ -1,12 +1,26 @@
 from datetime import datetime, timedelta
 
 from src.config import settings
+from src.db.database import StripeEventRow, get_session, init_db
 from src.models.billing import PRIME_PLANS, BillingPlan, plan_months
 from src.models.membership import MembershipTier, UserAccount
 from src.services.usage_service import usage_service
 
 
 class BillingService:
+    def __init__(self) -> None:
+        init_db()
+
+    def is_event_processed(self, event_id: str) -> bool:
+        with get_session() as session:
+            return session.get(StripeEventRow, event_id) is not None
+
+    def mark_event_processed(self, event_id: str) -> None:
+        with get_session() as session:
+            if not session.get(StripeEventRow, event_id):
+                session.add(StripeEventRow(id=event_id, processed_at=datetime.utcnow()))
+                session.commit()
+
     def list_plans(self) -> list[dict]:
         plans = []
         for plan, details in PRIME_PLANS.items():

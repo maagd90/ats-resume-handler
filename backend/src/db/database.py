@@ -76,9 +76,16 @@ class AgentStateRow(Base):
 class ActivityLogRow(Base):
     __tablename__ = "activity_log"
     id = Column(String, primary_key=True)
+    user_id = Column(String, index=True, default="default")
     message = Column(Text)
     level = Column(String, default="info")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class StripeEventRow(Base):
+    __tablename__ = "stripe_events"
+    id = Column(String, primary_key=True)
+    processed_at = Column(DateTime, default=datetime.utcnow)
 
 
 class UserAccountRow(Base):

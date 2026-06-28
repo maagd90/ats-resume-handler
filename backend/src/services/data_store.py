@@ -19,6 +19,10 @@ from src.models.job_criteria import JobCriteria
 from src.models.profile import CandidateProfile
 
 
+def _seen_job_key(user_id: str, job_id: str) -> str:
+    return f"{user_id}::{job_id}"
+
+
 class DataStore:
     def __init__(self) -> None:
         init_db()
@@ -53,6 +57,7 @@ class DataStore:
             if not row:
                 criteria = JobCriteria(
                     id=criteria_id,
+                    user_id=criteria_id,
                     min_fit_score=settings.default_min_fit_score,
                     max_applications_per_day=settings.default_max_applications_per_day,
                     search_interval_hours=settings.default_search_interval_hours,
@@ -75,18 +80,20 @@ class DataStore:
         return criteria
 
     # --- Applications ---
-    def list_applications(self, status: str | None = None) -> list[Application]:
+    def list_applications(self, user_id: str, status: str | None = None) -> list[Application]:
         with get_session() as session:
-            query = session.query(ApplicationRow)
+            query = session.query(ApplicationRow).filter(ApplicationRow.user_id == user_id)
             if status:
                 query = query.filter(ApplicationRow.status == status)
             rows = query.order_by(ApplicationRow.created_at.desc()).all()
             return [self._row_to_application(row) for row in rows]
 
-    def get_application(self, application_id: str) -> Application | None:
+    def get_application(self, application_id: str, user_id: str) -> Application | None:
         with get_session() as session:
             row = session.get(ApplicationRow, application_id)
-            return self._row_to_application(row) if row else None
+            if not row or row.user_id != user_id:
+                return None
+            return self._row_to_application(row)
 
     def save_application(self, app: Application) -> Application:
         app.updated_at = datetime.utcnow()
@@ -101,30 +108,35 @@ class DataStore:
             session.commit()
         return app
 
-    def count_applications_today(self, statuses: list[str] | None = None) -> int:
+    def count_applications_today(self, user_id: str, statuses: list[str] | None = None) -> int:
         with get_session() as session:
-            query = session.query(ApplicationRow).filter(ApplicationRow.created_at >= today_start())
+            query = session.query(ApplicationRow).filter(
+                ApplicationRow.user_id == user_id,
+                ApplicationRow.created_at >= today_start(),
+            )
             if statuses:
                 query = query.filter(ApplicationRow.status.in_(statuses))
             return query.count()
 
-    def has_seen_job(self, job_id: str) -> bool:
+    def has_seen_job(self, user_id: str, job_id: str) -> bool:
+        key = _seen_job_key(user_id, job_id)
         with get_session() as session:
-            return session.get(SeenJobRow, job_id) is not None
+            return session.get(SeenJobRow, key) is not None
 
-    def mark_job_seen(self, job_id: str) -> None:
+    def mark_job_seen(self, user_id: str, job_id: str) -> None:
+        key = _seen_job_key(user_id, job_id)
         with get_session() as session:
-            if not session.get(SeenJobRow, job_id):
-                session.add(SeenJobRow(job_id=job_id))
+            if not session.get(SeenJobRow, key):
+                session.add(SeenJobRow(job_id=key))
                 session.commit()
 
     # --- Agent state ---
-    def get_agent_status(self) -> AgentStatus:
+    def get_agent_status(self, user_id: str) -> AgentStatus:
         with get_session() as session:
-            row = session.get(AgentStateRow, "default")
+            row = session.get(AgentStateRow, user_id)
             if not row:
                 status = AgentStatus(search_interval_hours=settings.default_search_interval_hours)
-                self.save_agent_status(status)
+                self.save_agent_status(user_id, status)
                 return status
             stats = AgentStats.model_validate(json.loads(row.stats_json or "{}"))
             return AgentStatus(
@@ -136,11 +148,11 @@ class DataStore:
                 last_error=row.last_error,
             )
 
-    def save_agent_status(self, status: AgentStatus) -> AgentStatus:
+    def save_agent_status(self, user_id: str, status: AgentStatus) -> AgentStatus:
         with get_session() as session:
-            row = session.get(AgentStateRow, "default")
+            row = session.get(AgentStateRow, user_id)
             if not row:
-                row = AgentStateRow(id="default")
+                row = AgentStateRow(id=user_id)
                 session.add(row)
             row.is_running = status.is_running
             row.last_run_at = status.last_run_at
@@ -151,11 +163,12 @@ class DataStore:
             session.commit()
         return status
 
-    def log_activity(self, message: str, level: str = "info") -> None:
+    def log_activity(self, message: str, level: str = "info", user_id: str = "default") -> None:
         with get_session() as session:
             session.add(
                 ActivityLogRow(
                     id=str(uuid.uuid4()),
+                    user_id=user_id,
                     message=message,
                     level=level,
                     created_at=datetime.utcnow(),
@@ -163,10 +176,11 @@ class DataStore:
             )
             session.commit()
 
-    def get_activity_log(self, limit: int = 50) -> list[dict]:
+    def get_activity_log(self, user_id: str, limit: int = 50) -> list[dict]:
         with get_session() as session:
             rows = (
                 session.query(ActivityLogRow)
+                .filter(ActivityLogRow.user_id == user_id)
                 .order_by(ActivityLogRow.created_at.desc())
                 .limit(limit)
                 .all()
@@ -176,39 +190,32 @@ class DataStore:
                 for row in rows
             ]
 
-    def refresh_agent_stats(self) -> AgentStats:
+    def refresh_agent_stats(self, user_id: str) -> AgentStats:
         with get_session() as session:
             start = today_start()
-            found = session.query(ApplicationRow).filter(ApplicationRow.created_at >= start).count()
-            applied = (
-                session.query(ApplicationRow)
-                .filter(ApplicationRow.created_at >= start, ApplicationRow.status == ApplicationStatus.APPLIED.value)
-                .count()
-            )
-            failed = (
-                session.query(ApplicationRow)
-                .filter(ApplicationRow.created_at >= start, ApplicationRow.status == ApplicationStatus.FAILED.value)
-                .count()
-            )
-            queued = (
-                session.query(ApplicationRow)
-                .filter(ApplicationRow.status.in_([ApplicationStatus.QUEUED.value, ApplicationStatus.READY.value]))
-                .count()
-            )
-            scored = (
-                session.query(ApplicationRow)
-                .filter(
-                    ApplicationRow.created_at >= start,
-                    ApplicationRow.status.in_(
-                        [
-                            ApplicationStatus.SCORED.value,
-                            ApplicationStatus.QUEUED.value,
-                            ApplicationStatus.APPLIED.value,
-                        ]
-                    ),
-                )
-                .count()
-            )
+            base = session.query(ApplicationRow).filter(ApplicationRow.user_id == user_id)
+            found = base.filter(ApplicationRow.created_at >= start).count()
+            applied = base.filter(
+                ApplicationRow.created_at >= start,
+                ApplicationRow.status == ApplicationStatus.APPLIED.value,
+            ).count()
+            failed = base.filter(
+                ApplicationRow.created_at >= start,
+                ApplicationRow.status == ApplicationStatus.FAILED.value,
+            ).count()
+            queued = base.filter(
+                ApplicationRow.status.in_([ApplicationStatus.QUEUED.value, ApplicationStatus.READY.value])
+            ).count()
+            scored = base.filter(
+                ApplicationRow.created_at >= start,
+                ApplicationRow.status.in_(
+                    [
+                        ApplicationStatus.SCORED.value,
+                        ApplicationStatus.QUEUED.value,
+                        ApplicationStatus.APPLIED.value,
+                    ]
+                ),
+            ).count()
         return AgentStats(
             jobs_found_today=found,
             jobs_scored_today=scored,
@@ -221,6 +228,7 @@ class DataStore:
     def _row_to_application(row: ApplicationRow) -> Application:
         return Application(
             id=row.id,
+            user_id=row.user_id or "default",
             job_id=row.job_id,
             job_title=row.job_title,
             company=row.company,
@@ -240,6 +248,7 @@ class DataStore:
 
     @staticmethod
     def _apply_to_row(row: ApplicationRow, app: Application) -> None:
+        row.user_id = app.user_id
         row.job_id = app.job_id
         row.job_title = app.job_title
         row.company = app.company

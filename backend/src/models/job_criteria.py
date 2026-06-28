@@ -23,7 +23,7 @@ class JobCriteria(BaseModel):
     min_fit_score: int = 75
     max_applications_per_day: int = 10
     require_approval: bool = False
-    auto_apply_enabled: bool = True
+    auto_apply_enabled: bool = False
 
     search_interval_hours: int = 4
     preferred_apply_methods: list[str] = Field(default_factory=lambda: ["email", "browser", "manual"])

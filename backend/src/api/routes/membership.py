@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.deps import get_current_user
 from src.config import settings
@@ -25,17 +25,22 @@ async def get_membership(user: UserAccount = Depends(get_current_user)):
     }
 
 
-@router.post("/upgrade-dev")
-async def dev_upgrade_prime(user: UserAccount = Depends(get_current_user)):
-    """Dev-only endpoint to simulate Prime upgrade."""
-    if settings.is_production:
-        return {"error": "Not available in production. Use Stripe checkout."}
-    from src.models.membership import MembershipTier
-    from datetime import datetime, timedelta
+if not settings.is_production:
 
-    account = usage_service.get_account(user.id)
-    account.tier = MembershipTier.PRIME
-    account.billing_plan = "prime_3m"
-    account.prime_expires_at = datetime.utcnow() + timedelta(days=90)
-    usage_service.save_account(account)
-    return account
+    @router.post("/upgrade-dev")
+    async def dev_upgrade_prime(user: UserAccount = Depends(get_current_user)):
+        """Dev-only endpoint to simulate Prime upgrade."""
+        from datetime import datetime, timedelta
+
+        from src.models.membership import MembershipTier
+
+        account = usage_service.get_account(user.id)
+        account.tier = MembershipTier.PRIME
+        account.billing_plan = "prime_3m"
+        account.prime_expires_at = datetime.utcnow() + timedelta(days=90)
+        usage_service.save_account(account)
+        return {
+            "tier": account.tier.value,
+            "is_prime": True,
+            "prime_expires_at": account.prime_expires_at.isoformat() if account.prime_expires_at else None,
+        }

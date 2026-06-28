@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, HTTPException
 
 from src.agents.optimizer_pipeline import optimizer_pipeline
-from src.api.deps import get_current_user
+from src.api.deps import get_current_user, require_llm_quota
 from src.config import settings
 from src.models.membership import UserAccount
 from src.models.resume_template import DEFAULT_TEMPLATE, ResumeTemplateSettings
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/optimizer", tags=["optimizer"])
 @router.post("/run")
 async def run_optimizer(
     linkedin_text: str = Form(""),
-    user: UserAccount = Depends(get_current_user),
+    user: UserAccount = Depends(require_llm_quota),
 ):
     if not settings.llm_configured:
         raise HTTPException(

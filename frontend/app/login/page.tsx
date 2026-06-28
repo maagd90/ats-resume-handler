@@ -3,7 +3,7 @@
 import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { login, register } from "@/lib/api";
-import { setAccessToken } from "@/lib/auth";
+import { markAuthenticated, setAccessToken } from "@/lib/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
@@ -29,8 +29,9 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const result = mode === "login" ? await login(email, password) : await register(email, password, name || undefined);
+      const result = await (mode === "login" ? login(email, password) : register(email, password, name || undefined));
       setAccessToken(result.access_token);
+      markAuthenticated();
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
@@ -95,7 +96,7 @@ export default function LoginPage() {
               <input
                 type={showPassword ? "text" : "password"}
                 required
-                minLength={8}
+                minLength={mode === "register" ? 12 : 8}
                 className="input h-12 pr-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

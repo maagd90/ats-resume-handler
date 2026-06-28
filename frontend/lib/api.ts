@@ -14,7 +14,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const res = await fetch(`${API_URL}${path}`, { ...options, headers, credentials: "include" });
   if (res.status === 401) {
     clearAccessToken();
     if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
@@ -167,12 +167,29 @@ export type BillingPlan = {
 
 export function getResumeDownloadUrl(proposalId: string, asciiSafe = false) {
   const params = asciiSafe ? "?ascii_safe=true" : "";
-  return `${API_URL}/api/v1/proposals/${proposalId}/download/resume${params}`;
+  return `/api/v1/proposals/${proposalId}/download/resume${params}`;
 }
 
 export function getLinkedInPackDownloadUrl(proposalId: string, asciiSafe = false) {
   const params = asciiSafe ? "?ascii_safe=true" : "";
-  return `${API_URL}/api/v1/proposals/${proposalId}/download/linkedin${params}`;
+  return `/api/v1/proposals/${proposalId}/download/linkedin${params}`;
+}
+
+export async function downloadAuthenticated(path: string, filename: string) {
+  const token = getAccessToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API_URL}${path}`, { credentials: "include", headers });
+  if (!res.ok) {
+    throw new Error("Download failed");
+  }
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(objectUrl);
 }
 
 export async function fetchCriteria() {

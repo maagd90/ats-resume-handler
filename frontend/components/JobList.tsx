@@ -1,3 +1,5 @@
+import { safeHref } from "@/lib/security";
+
 type Job = {
   id: string;
   title: string;
@@ -50,11 +52,11 @@ export default function JobList({ jobs }: { jobs: Job[] }) {
               </div>
             </div>
           )}
-          {job.apply_link && (
+          {safeHref(job.apply_link) && (
             <a
-              href={job.apply_link}
+              href={safeHref(job.apply_link)!}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="mt-4 inline-block text-sm font-medium text-brand-600 hover:underline"
             >
               View application →

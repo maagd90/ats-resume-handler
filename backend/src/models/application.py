@@ -19,6 +19,7 @@ class ApplicationStatus(str, Enum):
 
 class Application(BaseModel):
     id: str
+    user_id: str = "default"
     job_id: str
     job_title: str
     company: str

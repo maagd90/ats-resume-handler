@@ -130,7 +130,7 @@ class OptimizerPipeline:
         data_store.save_profile(review.profile)
         proposal_store.save(proposal)
         usage_service.increment_optimization(user_id)
-        data_store.log_activity(f"Optimization complete. Proposal {proposal_id} ready for review.")
+        data_store.log_activity(f"Optimization complete. Proposal {proposal_id} ready for review.", user_id=user_id)
         return proposal
 
 

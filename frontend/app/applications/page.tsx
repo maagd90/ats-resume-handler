@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchApplications, approveApplication, skipApplication, retryApplication } from "@/lib/api";
+import { safeHref } from "@/lib/security";
 
 const STATUS_COLORS: Record<string, string> = {
   applied: "bg-green-100 text-green-700",
@@ -120,8 +121,8 @@ export default function ApplicationsPage() {
             <button onClick={() => setSelected(null)} className="btn-secondary">Close</button>
           </div>
           <p className="mt-2 text-sm text-slate-600">Fit score: {selected.fit_score}</p>
-          {selected.job_url && (
-            <a href={selected.job_url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-brand-600 hover:underline">
+          {safeHref(selected.job_url) && (
+            <a href={safeHref(selected.job_url)!} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-brand-600 hover:underline">
               Open job posting →
             </a>
           )}

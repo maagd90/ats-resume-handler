@@ -4,6 +4,7 @@ from src.apply.browser_apply import browser_apply_executor
 from src.apply.email_apply import detect_apply_email, email_apply_executor
 from src.models.application import Application, ApplicationStatus
 from src.models.profile import CandidateProfile
+from src.security.url_validator import UnsafeUrlError, validate_http_url
 from src.services.data_store import data_store
 
 
@@ -25,6 +26,7 @@ class ApplyRouter:
         subject: str,
         cover_body: str,
         require_approval: bool,
+        user_id: str,
     ) -> Application:
         if require_approval:
             application.status = ApplicationStatus.QUEUED
@@ -33,7 +35,7 @@ class ApplyRouter:
             )
             return application
 
-        criteria = data_store.get_criteria()
+        criteria = data_store.get_criteria(user_id)
         method = determine_apply_method(
             application.job_description,
             application.job_url,
@@ -55,14 +57,15 @@ class ApplyRouter:
                 )
                 application.status = ApplicationStatus.APPLIED
             elif method == "browser" and application.job_url:
-                browser_apply_executor.apply(profile, application.job_url, resume_path or Path("."), cover_path)
+                safe_url = validate_http_url(application.job_url, field_name="job_url")
+                browser_apply_executor.apply(profile, safe_url, resume_path or Path("."), cover_path)
                 application.status = ApplicationStatus.APPLIED
             else:
                 application.status = ApplicationStatus.QUEUED
                 application.apply_method = "manual"
-        except Exception as exc:
+        except (UnsafeUrlError, RuntimeError, Exception) as exc:
             application.status = ApplicationStatus.FAILED
-            application.error_message = str(exc)
+            application.error_message = "Application could not be submitted automatically."
             if "CAPTCHA" in str(exc).upper() or "login" in str(exc).lower():
                 application.status = ApplicationStatus.QUEUED
                 application.apply_method = "manual"

@@ -25,11 +25,11 @@ class AuthService:
 
     def register(self, email: str, password: str, name: str | None = None) -> tuple[str, str]:
         email = email.strip().lower()
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters.")
+        if len(password) < 12:
+            raise ValueError("Password must be at least 12 characters.")
         with get_session() as session:
             if session.query(UserRow).filter(UserRow.email == email).first():
-                raise ValueError("An account with this email already exists.")
+                raise ValueError("Unable to create account.")
 
             user_id = str(uuid.uuid4())
             session.add(

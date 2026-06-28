@@ -1,7 +1,8 @@
 "use client";
 
-import { createCheckout, fetchBillingPlans, fetchMembership } from "@/lib/api";
-import { getAccessToken } from "@/lib/auth";
+import { createCheckout, devUpgradePrime, fetchBillingPlans, fetchMembership } from "@/lib/api";
+import { isLoggedIn } from "@/lib/auth";
+import { safeStripeCheckoutUrl } from "@/lib/security";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -29,20 +30,24 @@ export default function PricingPage() {
         setStripeConfigured(Boolean(data.stripe_configured));
       })
       .catch(() => {});
-    if (getAccessToken()) {
+    if (isLoggedIn()) {
       fetchMembership().then(setMembership).catch(() => {});
     }
   }, []);
 
   async function handleCheckout(planId: string) {
-    if (!getAccessToken()) {
+    if (!isLoggedIn()) {
       window.location.href = "/login?register=1";
       return;
     }
     setLoadingPlan(planId);
     try {
       const { checkout_url } = await createCheckout(planId);
-      window.location.href = checkout_url;
+      const safeUrl = safeStripeCheckoutUrl(checkout_url);
+      if (!safeUrl) {
+        throw new Error("Invalid checkout redirect");
+      }
+      window.location.href = safeUrl;
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Checkout failed");
     } finally {
@@ -51,10 +56,7 @@ export default function PricingPage() {
   }
 
   async function devUpgrade() {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/membership/upgrade-dev`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${getAccessToken()}` },
-    });
+    await devUpgradePrime();
     const m = await fetchMembership();
     setMembership(m);
     setMessage("Dev Prime activated for 90 days.");
@@ -123,7 +125,7 @@ export default function PricingPage() {
         </p>
       )}
 
-      {getAccessToken() && process.env.NODE_ENV === "development" && (
+      {isLoggedIn() && process.env.NODE_ENV === "development" && (
         <div className="card">
           <p className="text-sm text-slate-600">Development only:</p>
           <button onClick={devUpgrade} className="btn-secondary mt-2">

@@ -35,7 +35,7 @@ export default function AiPipelinePanel() {
 
   useEffect(() => {
     fetchQuota()
-      .then((q: { platform_ai?: boolean }) => setPlatformAi(Boolean(q.platform_ai)))
+      .then((q) => setPlatformAi(Boolean((q as { platform_ai?: boolean }).platform_ai)))
       .catch(() => setPlatformAi(false));
 
     fetchAiPipeline()

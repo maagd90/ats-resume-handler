@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +31,13 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     platform_ai_enabled: bool = True
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        weak_jwt = self.jwt_secret in ("", "change-me-in-production")
+        if self.is_production and weak_jwt:
+            raise ValueError("JWT_SECRET must be set to a strong random value in production")
+        return self
 
     @property
     def is_production(self) -> bool:
