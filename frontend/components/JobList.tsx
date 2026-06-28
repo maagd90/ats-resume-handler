@@ -13,7 +13,7 @@ type Job = {
 
 export default function JobList({ jobs }: { jobs: Job[] }) {
   if (!jobs.length) {
-    return <p className="text-sm text-slate-500">No jobs found. Try another search.</p>;
+    return <p className="text-sm text-muted-foreground">No jobs found. Try another search.</p>;
   }
 
   return (
@@ -22,8 +22,8 @@ export default function JobList({ jobs }: { jobs: Job[] }) {
         <article key={job.id} className="card">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">{job.title}</h3>
-              <p className="text-sm text-slate-600">
+              <h3 className="text-lg font-semibold text-foreground">{job.title}</h3>
+              <p className="text-sm text-muted-foreground">
                 {job.company}
                 {job.location ? ` · ${job.location}` : ""}
               </p>
@@ -35,18 +35,18 @@ export default function JobList({ jobs }: { jobs: Job[] }) {
               </div>
             )}
           </div>
-          <p className="mt-3 line-clamp-4 text-sm text-slate-600">{job.description}</p>
+          <p className="mt-3 line-clamp-4 text-sm text-muted-foreground">{job.description}</p>
           {job.gap_analysis && (
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold uppercase text-green-700">Matched Skills</p>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="text-xs font-semibold uppercase text-green-700 dark:text-green-400">Matched Skills</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {(job.gap_analysis.matched_skills || []).join(", ") || "None detected"}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase text-amber-700">Missing Skills</p>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">Missing Skills</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {(job.gap_analysis.missing_skills || []).join(", ") || "None detected"}
                 </p>
               </div>

@@ -41,8 +41,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+    <div className="flex min-h-screen items-center justify-center bg-surface-muted p-4">
+      <div className="fixed left-0 right-0 top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="btn-ghost flex items-center gap-2 text-sm">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -58,8 +58,8 @@ export default function LoginPage() {
       </div>
 
       <div className="card-elevated mt-16 w-full max-w-md p-0 shadow-lg">
-        <div className="border-b border-gray-100 p-8 pb-6 text-center">
-          <h2 className="text-2xl font-semibold text-gray-900">
+        <div className="border-b border-border p-8 pb-6 text-center">
+          <h2 className="text-2xl font-semibold text-foreground">
             {mode === "login" ? "Welcome back" : "Create your account"}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -70,7 +70,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4 p-8 pt-6">
           {mode === "register" && (
             <div>
-              <label className="text-sm font-medium text-gray-700">Full name</label>
+              <label className="text-sm font-medium text-foreground">Full name</label>
               <input
                 className="input mt-1.5 h-12"
                 value={name}
@@ -80,7 +80,7 @@ export default function LoginPage() {
             </div>
           )}
           <div>
-            <label className="text-sm font-medium text-gray-700">Email</label>
+            <label className="text-sm font-medium text-foreground">Email</label>
             <input
               type="email"
               required
@@ -91,7 +91,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Password</label>
+            <label className="text-sm font-medium text-foreground">Password</label>
             <div className="relative mt-1.5">
               <input
                 type={showPassword ? "text" : "password"}
@@ -105,7 +105,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-gray-900"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -122,7 +122,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">{error}</p>}
 
           <button type="submit" disabled={loading} className="btn-primary h-12 w-full">
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create free account"}

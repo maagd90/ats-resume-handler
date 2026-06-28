@@ -1,13 +1,15 @@
 "use client";
 
 import Sidebar from "@/components/Sidebar";
+import { AppShellSkeleton } from "@/components/LoadingSkeleton";
 import { clearAccessToken, isLoggedIn } from "@/lib/auth";
+import { showDevTools } from "@/lib/devTools";
 import { devUpgradePrime, fetchMe } from "@/lib/api";
+import { isAuthlessRoute } from "@/lib/publicRoutes";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const AUTHLESS = ["/", "/login", "/templates"];
 const FULL_BLEED = ["/optimize"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -17,9 +19,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isPrime, setIsPrime] = useState(false);
   const [ready, setReady] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
-  const showDevPrime = process.env.NODE_ENV === "development";
+  const showDevPrime = showDevTools();
 
-  const isAuthless = AUTHLESS.some((p) => pathname === p);
+  const isAuthless = isAuthlessRoute(pathname);
   const isFullBleed = FULL_BLEED.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const isPublicPricing = pathname === "/pricing" && !isLoggedIn();
 
@@ -43,13 +45,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isAuthless || isPublicPricing) return <>{children}</>;
 
-  if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-muted text-muted-foreground">
-        Loading...
-      </div>
-    );
-  }
+  if (!ready) return <AppShellSkeleton />;
 
   if (isFullBleed) {
     return <>{children}</>;
@@ -92,17 +88,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     {unlocking ? "Enabling…" : "Enable Prime (dev)"}
                   </button>
                 )}
-                <Link href="/pricing" className="badge bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-800">
+                <Link href="/pricing" className="badge bg-muted text-muted-foreground hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-800">
                   Upgrade
                 </Link>
               </>
             )}
-            <button type="button" onClick={logout} className="btn-ghost text-xs">
+            <button type="button" onClick={logout} className="btn-ghost text-xs" aria-label="Log out">
               Logout
             </button>
           </div>
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto p-8">{children}</main>
       </div>
     </div>
   );

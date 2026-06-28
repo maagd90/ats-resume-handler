@@ -1,5 +1,8 @@
 "use client";
 
+import AutoApplyConsent from "@/components/AutoApplyConsent";
+import LegalNote from "@/components/LegalNote";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchAgentStatus, startAgent, stopAgent, runAgentNow } from "@/lib/api";
 
@@ -7,14 +10,14 @@ export default function AgentSettingsPage() {
   const [status, setStatus] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [consent, setConsent] = useState(false);
 
   async function load() {
     try {
       const data = (await fetchAgentStatus()) as any;
       setStatus(data.status);
       setActivity(data.activity || []);
-    } catch {
-      /* agent status is available without Prime */
     } finally {
       setLoading(false);
     }
@@ -24,21 +27,27 @@ export default function AgentSettingsPage() {
     load();
   }, []);
 
-  const [error, setError] = useState("");
-
   async function toggle() {
     setError("");
+    if (!status?.is_running && !consent) {
+      setError("Please confirm the auto-apply disclosure before starting.");
+      return;
+    }
     try {
       if (status?.is_running) await stopAgent();
       else await startAgent();
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Agent control requires Prime — click Enable Prime (dev) in the header.");
+      setError(err instanceof Error ? err.message : "Automation requires Prime membership.");
     }
   }
 
   async function triggerNow() {
     setError("");
+    if (!consent) {
+      setError("Please confirm the auto-apply disclosure first.");
+      return;
+    }
     try {
       await runAgentNow();
       await load();
@@ -47,81 +56,79 @@ export default function AgentSettingsPage() {
     }
   }
 
-  if (loading) return <p className="text-slate-600">Loading agent settings...</p>;
+  if (loading) return <p className="text-muted-foreground">Loading automation settings…</p>;
 
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-3xl font-bold text-slate-900">Agent Settings</h1>
-        <p className="mt-2 text-slate-600">Control the 24/7 autonomous job search and apply loop.</p>
+        <h1 className="text-3xl font-bold text-foreground">Job automation</h1>
+        <p className="mt-2 text-muted-foreground">
+          Search, score, and prepare applications. Review Mode is on by default — you approve before anything is sent.
+        </p>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </section>
 
       <section className="card">
+        <h2 className="text-lg font-semibold text-foreground">Activity log</h2>
+        <p className="mt-1 text-sm text-muted-foreground">See exactly what was prepared, queued, or submitted.</p>
+        <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto text-sm">
+          {activity.map((item: any) => (
+            <li key={item.id} className="rounded-lg bg-surface-muted px-3 py-2 dark:bg-slate-800">
+              <span className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString()}</span>
+              <p className="text-foreground">{item.message}</p>
+            </li>
+          ))}
+          {!activity.length && (
+            <li className="text-muted-foreground">
+              No activity yet.{" "}
+              <Link href="/settings/criteria" className="text-brand-600 hover:underline">
+                Set job criteria
+              </Link>{" "}
+              first, then start automation.
+            </li>
+          )}
+        </ul>
+      </section>
+
+      <AutoApplyConsent checked={consent} onChange={setConsent} />
+
+      <section className="card">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-slate-500">Status</p>
-            <p className={`text-2xl font-bold ${status?.is_running ? "text-green-600" : "text-slate-400"}`}>
-              {status?.is_running ? "Running 24/7" : "Paused"}
+            <p className="text-sm text-muted-foreground">Status</p>
+            <p className={`text-2xl font-bold ${status?.is_running ? "text-green-600" : "text-muted-foreground"}`}>
+              {status?.is_running ? "Running" : "Paused"}
             </p>
             {status?.last_run_at && (
-              <p className="mt-1 text-sm text-slate-600">Last run: {new Date(status.last_run_at).toLocaleString()}</p>
-            )}
-            {status?.next_run_at && (
-              <p className="text-sm text-slate-600">Next run: {new Date(status.next_run_at).toLocaleString()}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Last run: {new Date(status.last_run_at).toLocaleString()}</p>
             )}
           </div>
           <div className="flex gap-2">
-            <button onClick={toggle} className={status?.is_running ? "btn-secondary" : "btn-primary"}>
-              {status?.is_running ? "Pause Agent" : "Start Agent"}
+            <button type="button" onClick={toggle} className={status?.is_running ? "btn-secondary" : "btn-primary"} aria-label={status?.is_running ? "Pause automation" : "Start automation"}>
+              {status?.is_running ? "Pause" : "Start"}
             </button>
-            <button onClick={triggerNow} className="btn-secondary">Run Now</button>
+            <button type="button" onClick={triggerNow} className="btn-secondary" aria-label="Run automation now">
+              Run now
+            </button>
           </div>
         </div>
-        {status?.last_error && (
-          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">Last error: {status.last_error}</p>
-        )}
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <div className="card text-center">
-          <p className="text-sm text-slate-500">Found Today</p>
-          <p className="text-3xl font-bold">{status?.stats?.jobs_found_today || 0}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-sm text-slate-500">Scored Today</p>
-          <p className="text-3xl font-bold">{status?.stats?.jobs_scored_today || 0}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-sm text-slate-500">Applied Today</p>
-          <p className="text-3xl font-bold text-green-600">{status?.stats?.applications_submitted_today || 0}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-sm text-slate-500">Failed Today</p>
-          <p className="text-3xl font-bold text-red-600">{status?.stats?.applications_failed_today || 0}</p>
-        </div>
+        {[
+          ["Found today", status?.stats?.jobs_found_today],
+          ["Scored today", status?.stats?.jobs_scored_today],
+          ["Applied today", status?.stats?.applications_submitted_today],
+          ["Failed today", status?.stats?.applications_failed_today],
+        ].map(([label, val]) => (
+          <div key={label as string} className="card text-center">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="text-3xl font-bold text-foreground">{val || 0}</p>
+          </div>
+        ))}
       </section>
 
-      <section className="card">
-        <h2 className="text-lg font-semibold">SMTP Configuration</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Set <code>SMTP_USER</code> and <code>SMTP_PASSWORD</code> in backend environment for Tier 1 email apply.
-          Use a Gmail app password or your email provider&apos;s SMTP credentials.
-        </p>
-      </section>
-
-      <section className="card">
-        <h2 className="text-lg font-semibold">Activity Log</h2>
-        <ul className="mt-4 max-h-96 space-y-2 overflow-y-auto text-sm">
-          {activity.map((item: any) => (
-            <li key={item.id} className="rounded-lg bg-slate-50 px-3 py-2">
-              <span className="text-xs text-slate-400">{new Date(item.created_at).toLocaleString()}</span>
-              <p>{item.message}</p>
-            </li>
-          ))}
-          {!activity.length && <li className="text-slate-500">No activity yet.</li>}
-        </ul>
-      </section>
+      <LegalNote variant="autoApply" />
     </div>
   );
 }

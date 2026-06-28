@@ -5,6 +5,7 @@ import GuidancePanel from "@/components/GuidancePanel";
 import ImpactImprovementPlan from "@/components/ImpactImprovementPlan";
 import IssueList from "@/components/IssueList";
 import ResumePreview from "@/components/ResumePreview";
+import ScoreGuidance from "@/components/ScoreGuidance";
 import ScoreRing from "@/components/ScoreRing";
 import UploadZone from "@/components/UploadZone";
 import Link from "next/link";
@@ -540,11 +541,12 @@ export default function OptimizePage() {
                       )}
                     </div>
                     {proposal.resume_score && (
-                      <div className="card">
+                      <div className="card space-y-4">
+                        <ScoreGuidance compact />
                         <div className="flex flex-wrap justify-around gap-4">
                           <ScoreRing label="Overall" value={proposal.resume_score.overall} size={100} />
-                          <ScoreRing label="Keywords" value={proposal.resume_score.keywords} size={72} accent="#0d9488" />
-                          <ScoreRing label="Impact" value={proposal.resume_score.impact} size={72} accent="#6366f1" />
+                          <ScoreRing label="Keywords" value={proposal.resume_score.keywords} size={72} />
+                          <ScoreRing label="Impact" value={proposal.resume_score.impact} size={72} />
                         </div>
                       </div>
                     )}

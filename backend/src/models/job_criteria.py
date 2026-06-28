@@ -22,7 +22,7 @@ class JobCriteria(BaseModel):
 
     min_fit_score: int = 75
     max_applications_per_day: int = 10
-    require_approval: bool = False
+    require_approval: bool = True
     auto_apply_enabled: bool = False
 
     search_interval_hours: int = 4

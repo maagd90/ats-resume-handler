@@ -2,7 +2,7 @@ export default function ScoreRing({
   label,
   value,
   size = 120,
-  accent = "#7c3aed",
+  accent = "#0d9488",
 }: {
   label: string;
   value: number;
@@ -18,7 +18,7 @@ export default function ScoreRing({
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e2e8f0" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-slate-200 dark:text-slate-700" />
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -33,11 +33,11 @@ export default function ScoreRing({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-slate-900">{value.toFixed(0)}</span>
-          <span className="text-[10px] uppercase tracking-wide text-slate-400">/ 100</span>
+          <span className="text-2xl font-bold text-foreground">{value.toFixed(0)}</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">/ 100</span>
         </div>
       </div>
-      <p className="mt-2 text-sm font-medium text-slate-600">{label}</p>
+      <p className="mt-2 text-sm font-medium text-muted-foreground">{label}</p>
     </div>
   );
 }

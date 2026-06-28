@@ -14,7 +14,7 @@ const NAV = [
   { href: "/jobs", label: "Job Search", icon: IconJobs, prime: true },
   { href: "/applications", label: "Applications", icon: IconJobs, prime: true },
   { href: "/settings/criteria", label: "Job Criteria", icon: IconAgent, prime: true },
-  { href: "/settings/agent", label: "Agent", icon: IconAgent, prime: true },
+  { href: "/settings/agent", label: "Automation", icon: IconAgent, prime: true },
   { href: "/pricing", label: "Pricing", icon: IconPricing },
 ];
 
