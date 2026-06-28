@@ -17,6 +17,7 @@ import {
   runOptimizer,
   updateProfile,
   uploadResume,
+  analyzeLinkedInFile,
 } from "@/lib/api";
 
 type SectionId = "personal" | "experience" | "education" | "skills" | "linkedin";
@@ -459,6 +460,18 @@ export default function OptimizePage() {
 
             {activeSection === "linkedin" && (
               <div className="space-y-4">
+                <UploadZone
+                  accept=".pdf,.docx,.txt"
+                  label="Upload LinkedIn PDF export (optional)"
+                  onFile={async (file) => {
+                    try {
+                      const data = (await analyzeLinkedInFile(file)) as any;
+                      if (data.extracted_text_preview) setLinkedinText(data.extracted_text_preview);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "LinkedIn PDF import failed");
+                    }
+                  }}
+                />
                 <textarea
                   rows={8}
                   value={linkedinText}

@@ -96,6 +96,13 @@ export async function analyzeLinkedIn(linkedinText: string) {
   return request("/api/v1/linkedin/analyze", { method: "POST", body: form });
 }
 
+export async function analyzeLinkedInFile(file: File, linkedinText = "") {
+  const form = new FormData();
+  form.append("file", file);
+  if (linkedinText.trim()) form.append("linkedin_text", linkedinText);
+  return request("/api/v1/linkedin/analyze", { method: "POST", body: form });
+}
+
 export async function searchJobs(query?: string, location?: string) {
   const params = new URLSearchParams();
   if (query) params.set("query", query);
