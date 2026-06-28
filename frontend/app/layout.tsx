@@ -6,8 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "ResumeAI — ATS Resume Builder & Job Agent",
-  description: "AI-powered resume optimization, LinkedIn guidance, and autonomous job hunting",
+  title: "ResumeBuilder — ATS Resume Builder & Job Agent",
+  description: "Build professional ATS-friendly resumes with AI-powered optimization and autonomous job hunting",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -12,72 +12,88 @@ type Profile = {
   education?: Array<{ degree?: string; institution?: string }>;
 };
 
-export default function ResumePreview({ profile, compact = false }: { profile?: Profile | null; compact?: boolean }) {
+export default function ResumePreview({ profile }: { profile?: Profile | null; compact?: boolean }) {
   if (!profile?.contact?.name && !profile?.summary && !profile?.experience?.length) {
     return (
-      <div className={`flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-center ${compact ? "min-h-[320px] p-6" : "min-h-[480px] p-10"}`}>
-        <div className="h-24 w-20 rounded border border-slate-200 bg-slate-50 shadow-sm" />
-        <p className="mt-4 text-sm font-medium text-slate-600">Resume preview</p>
-        <p className="mt-1 max-w-xs text-xs text-slate-400">Upload a resume to see a live preview of your ATS-formatted document.</p>
+      <div className="flex min-h-[480px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-10 text-center">
+        <div className="mb-4 h-24 w-20 rounded border border-gray-200 bg-gray-50 shadow-sm" />
+        <p className="text-sm font-medium text-gray-600">Resume preview</p>
+        <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+          Upload a resume to see a live preview of your ATS-formatted document.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-panel ${compact ? "max-h-[480px]" : ""}`}>
-      <div className="border-b border-slate-100 bg-slate-50 px-4 py-2">
-        <p className="text-xs font-medium text-slate-500">Live preview · Calibri ATS template</p>
-      </div>
-      <div className={`resume-preview-doc overflow-y-auto ${compact ? "max-h-[440px] text-[10px]" : "max-h-[560px]"}`}>
+    <div className="resume-preview-doc mx-auto max-w-4xl shadow-lg">
+      <div className="border-b border-gray-200 pb-6 mb-6">
         <h1>{profile.contact?.name || "Your Name"}</h1>
-        <p className="mt-1 text-slate-600">
-          {[profile.contact?.phone, profile.contact?.email, profile.contact?.linkedin_url].filter(Boolean).join(" · ")}
-        </p>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+          {profile.contact?.email && <span>{profile.contact.email}</span>}
+          {profile.contact?.phone && <span>{profile.contact.phone}</span>}
+          {profile.contact?.linkedin_url && <span>{profile.contact.linkedin_url}</span>}
+        </div>
+      </div>
 
-        {profile.summary && (
-          <>
-            <h2>Summary</h2>
-            <p className="mt-1">{profile.summary}</p>
-          </>
-        )}
+      {profile.summary && (
+        <div className="mb-6">
+          <h2>Professional Summary</h2>
+          <p className="mt-2 leading-relaxed text-gray-700">{profile.summary}</p>
+        </div>
+      )}
 
-        {profile.experience && profile.experience.length > 0 && (
-          <>
-            <h2>Experience</h2>
-            {profile.experience.slice(0, 4).map((exp, i) => (
-              <div key={i} className="mt-2">
-                <p className="font-semibold text-slate-900">
-                  {exp.title} | {exp.company}
-                  {exp.start_date && ` | ${exp.start_date}${exp.end_date ? ` – ${exp.end_date}` : ""}`}
-                </p>
-                <ul className="mt-0.5 list-none space-y-0.5 pl-0">
-                  {(exp.bullets || []).slice(0, 3).map((b, j) => (
-                    <li key={j}>- {b}</li>
+      {profile.experience && profile.experience.length > 0 && (
+        <div className="mb-6">
+          <h2>Experience</h2>
+          <div className="mt-3 space-y-4">
+            {profile.experience.map((exp, i) => (
+              <div key={i}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <h3 className="font-medium text-gray-900">{exp.title}</h3>
+                  {(exp.start_date || exp.end_date) && (
+                    <span className="text-sm text-gray-600">
+                      {exp.start_date}
+                      {exp.end_date ? ` – ${exp.end_date}` : ""}
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-700">{exp.company}</p>
+                <ul className="mt-1 space-y-0.5 text-sm leading-relaxed text-gray-700">
+                  {(exp.bullets || []).map((b, j) => (
+                    <li key={j} className="whitespace-pre-line">{b.startsWith("•") || b.startsWith("-") ? b : `• ${b}`}</li>
                   ))}
                 </ul>
               </div>
             ))}
-          </>
-        )}
+          </div>
+        </div>
+      )}
 
-        {profile.education && profile.education.length > 0 && (
-          <>
-            <h2>Education</h2>
-            {profile.education.slice(0, 2).map((edu, i) => (
-              <p key={i} className="mt-1">
-                {edu.degree} | {edu.institution}
-              </p>
+      {profile.education && profile.education.length > 0 && (
+        <div className="mb-6">
+          <h2>Education</h2>
+          {profile.education.map((edu, i) => (
+            <div key={i} className="mt-2">
+              <h3 className="font-medium text-gray-900">{edu.degree}</h3>
+              <p className="text-gray-700">{edu.institution}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {profile.skills && profile.skills.length > 0 && (
+        <div>
+          <h2>Skills</h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {profile.skills.slice(0, 20).map((skill) => (
+              <span key={skill} className="badge bg-gray-100 text-sm text-gray-700">
+                {skill}
+              </span>
             ))}
-          </>
-        )}
-
-        {profile.skills && profile.skills.length > 0 && (
-          <>
-            <h2>Skills</h2>
-            <p className="mt-1">{profile.skills.slice(0, 15).join(", ")}</p>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

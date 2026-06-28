@@ -2,19 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  IconAgent,
-  IconDashboard,
-  IconJobs,
-  IconLinkedIn,
-  IconOptimize,
-  IconPricing,
-  IconResume,
-} from "@/components/icons";
+import { IconAgent, IconDashboard, IconJobs, IconLinkedIn, IconOptimize, IconPricing, IconResume } from "@/components/icons";
 
 const NAV = [
-  { href: "/", label: "Dashboard", icon: IconDashboard },
-  { href: "/optimize", label: "Optimize", icon: IconOptimize },
+  { href: "/dashboard", label: "Dashboard", icon: IconDashboard },
+  { href: "/optimize", label: "Resume Builder", icon: IconOptimize },
   { href: "/resume", label: "My Resume", icon: IconResume },
   { href: "/linkedin", label: "LinkedIn", icon: IconLinkedIn },
   { href: "/jobs", label: "Job Search", icon: IconJobs, prime: true },
@@ -24,42 +16,45 @@ const NAV = [
   { href: "/pricing", label: "Pricing", icon: IconPricing },
 ];
 
-export default function Sidebar({ isPrime = false }: { isPrime?: boolean }) {
+export default function Sidebar({ email, isPrime }: { email?: string | null; isPrime?: boolean }) {
   const pathname = usePathname();
+  const initials = email ? email.slice(0, 2).toUpperCase() : "U";
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-slate-300">
-      <div className="border-b border-sidebar-border px-5 py-6">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
+      <div className="border-b border-gray-200 p-6">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <IconResume className="h-8 w-8 text-brand-600" />
+          <span className="text-xl font-semibold text-gray-900">ResumeBuilder</span>
+        </Link>
+      </div>
+
+      <div className="border-b border-gray-200 p-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
-            <IconResume className="h-5 w-5" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">
+            {initials}
           </div>
-          <div>
-            <p className="text-sm font-bold text-white">ResumeAI</p>
-            <p className="text-xs text-slate-400">ATS & Job Agent</p>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-gray-900">{email || "User"}</p>
+            <p className="text-xs text-muted-foreground">{isPrime ? "Prime member" : "Free plan"}</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Menu</p>
+      <nav className="flex-1 space-y-1 p-4">
         {NAV.map((item) => {
-          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           const locked = item.prime && !isPrime;
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={locked ? "/pricing" : item.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                active
-                  ? "bg-sidebar-active text-white shadow-sm"
-                  : locked
-                    ? "text-slate-500 hover:bg-sidebar-hover hover:text-slate-400"
-                    : "text-slate-300 hover:bg-sidebar-hover hover:text-white"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                active ? "nav-active" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
-              <Icon className="h-5 w-5 shrink-0 opacity-90" />
+              <Icon className="h-5 w-5 shrink-0" />
               <span className="flex-1">{item.label}</span>
               {locked && <span className="badge-prime text-[10px]">Prime</span>}
             </Link>
@@ -67,17 +62,11 @@ export default function Sidebar({ isPrime = false }: { isPrime?: boolean }) {
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border p-4">
-        <div className="rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 p-4 text-white">
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-80">Platform AI</p>
-          <p className="mt-1 text-sm font-medium">Included in every plan</p>
-          <p className="mt-1 text-xs opacity-75">No API keys needed</p>
-          {!isPrime && (
-            <Link href="/pricing" className="mt-3 inline-block rounded-lg bg-white/20 px-3 py-1.5 text-xs font-semibold hover:bg-white/30">
-              Upgrade to Prime
-            </Link>
-          )}
-        </div>
+      <div className="border-t border-gray-200 p-4">
+        <Link href="/pricing" className="block rounded-lg bg-brand-600/10 p-4 text-sm">
+          <p className="font-semibold text-brand-700">Platform AI included</p>
+          <p className="mt-1 text-xs text-gray-600">No API keys needed on any plan</p>
+        </Link>
       </div>
     </aside>
   );

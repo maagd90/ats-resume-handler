@@ -8,30 +8,32 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          300: "#c4b5fd",
-          400: "#a78bfa",
-          500: "#8b5cf6",
-          600: "#7c3aed",
-          700: "#6d28d9",
-          800: "#5b21b6",
-          900: "#4c1d95",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
         },
-        sidebar: {
-          DEFAULT: "#0f172a",
-          hover: "#1e293b",
-          active: "#312e81",
-          border: "#1e293b",
+        accent: {
+          teal: "#14b8a6",
         },
+        muted: {
+          DEFAULT: "#ececf0",
+          foreground: "#717182",
+        },
+        border: "rgba(0, 0, 0, 0.1)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)",
+        card: "0 1px 3px 0 rgb(0 0 0 / 0.06)",
         panel: "0 4px 24px -4px rgb(15 23 42 / 0.08)",
+      },
+      borderRadius: {
+        lg: "0.625rem",
       },
     },
   },
