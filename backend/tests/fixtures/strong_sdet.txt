@@ -1,0 +1,25 @@
+Jane Smith
+jane.smith@email.com | (555) 123-4567 | San Francisco, CA
+
+SUMMARY
+Senior SDET with 13 years building test automation frameworks for enterprise SaaS. Reduced regression cycles 40% and led a team of 6 QA engineers across CI/CD pipelines.
+
+SKILLS
+Selenium, Python, pytest, CI/CD, Jenkins, Test Automation, API Testing, Jira, Agile
+
+EXPERIENCE
+Jan 2019 — Present
+Senior SDET | TechCorp Inc | San Francisco, CA
+- Led team of 6 engineers building Selenium and pytest automation covering 2,000+ test cases
+- Reduced regression cycle time 40% by parallelizing CI/CD pipelines in Jenkins
+- Architected API testing framework processing 500K requests daily with 99.9% reliability
+- Mentored 4 junior SDETs on BDD practices with Cucumber
+
+Mar 2015 — Dec 2018
+QA Engineer | DataSoft | Oakland, CA
+- Built automated test suite covering 800 UI scenarios using Selenium WebDriver
+- Decreased production defects 35% through shift-left testing in Agile sprints
+- Integrated test results with Jira for traceability across 12 product teams
+
+EDUCATION
+BS Computer Science | State University | 2014

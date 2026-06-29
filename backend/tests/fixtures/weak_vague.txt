@@ -1,0 +1,17 @@
+John Doe
+john@email.com
+
+SUMMARY
+Hardworking team player and go-getter looking for opportunities.
+
+SKILLS
+communication, teamwork
+
+EXPERIENCE
+Software Tester | Some Company
+- Responsible for testing applications
+- Worked on various projects
+- Duties included writing test cases
+
+EDUCATION
+Degree | School
