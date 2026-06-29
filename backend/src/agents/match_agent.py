@@ -8,6 +8,7 @@ from src.scoring.job_matcher import (
     compute_embedding,
     cosine_similarity,
     extract_skills_from_text,
+    get_profile_skills,
 )
 
 
@@ -66,7 +67,7 @@ def score_job_with_criteria(
 ) -> JobScoreResult:
     description = job.description
     profile_doc = build_profile_document(profile)
-    profile_skills = {skill.lower() for skill in profile.skills}
+    profile_skills = get_profile_skills(profile)
     jd_skills = extract_skills_from_text(description)
     matched = sorted(profile_skills.intersection(jd_skills))
     missing = sorted(jd_skills - profile_skills)

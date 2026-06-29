@@ -98,6 +98,22 @@ def build_profile_document(profile: CandidateProfile) -> str:
     return "\n".join(part for part in parts if part)
 
 
+def get_profile_skills(profile: CandidateProfile) -> set[str]:
+    """Collect normalized skills from resume text and parsed skill entries.
+
+    Parsed ``profile.skills`` entries are often noisy blobs (e.g. multiple
+    tools concatenated in one string). Gazetteer extraction on resume text and
+    each entry yields reliable individual skill tokens for overlap scoring.
+    """
+    skills: set[str] = set()
+    resume_text = profile.resume_raw_text or build_profile_document(profile)
+    skills.update(extract_skills_from_text(resume_text))
+    for entry in profile.skills:
+        if entry.strip():
+            skills.update(extract_skills_from_text(entry))
+    return skills
+
+
 def compute_embedding(text: str) -> Optional[list[float]]:
     model = _get_embedding_model()
     if not model:
@@ -119,7 +135,7 @@ def score_job_fit(
     llm_requirements: dict[str, list[str]] | None = None,
 ) -> JobScoreResult:
     profile_doc = build_profile_document(profile)
-    profile_skills = {skill.lower() for skill in profile.skills}
+    profile_skills = get_profile_skills(profile)
     jd_skills = _jd_skill_set(description, llm_requirements)
     matched = sorted(profile_skills.intersection(jd_skills))
     missing = sorted(jd_skills - profile_skills)
