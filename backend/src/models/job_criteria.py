@@ -9,7 +9,7 @@ class JobCriteria(BaseModel):
     user_id: str = "default"
     is_active: bool = True
 
-    job_titles: list[str] = Field(default_factory=lambda: ["Software Engineer"])
+    job_titles: list[str] = Field(default_factory=list)
     locations: list[str] = Field(default_factory=lambda: ["Remote"])
     remote_only: bool = False
     employment_types: list[str] = Field(default_factory=lambda: ["FULLTIME"])

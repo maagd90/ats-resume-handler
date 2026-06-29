@@ -6,6 +6,7 @@ import time
 from typing import TYPE_CHECKING
 
 from src.models.profile import JobListing
+from src.scoring.criteria_sync import effective_job_titles, effective_locations
 
 if TYPE_CHECKING:
     from src.models.job_criteria import JobCriteria
@@ -15,28 +16,9 @@ _search_cache: dict[tuple[str, str], tuple[float, list]] = {}
 CACHE_TTL_SECONDS = 3600
 
 
-def _dedupe_strings(items: list[str]) -> list[str]:
-    seen: set[str] = set()
-    out: list[str] = []
-    for item in items:
-        key = item.strip().lower()
-        if key and key not in seen:
-            seen.add(key)
-            out.append(item.strip())
-    return out
-
-
-def build_search_queries(profile: CandidateProfile, criteria: JobCriteria | None) -> list[tuple[str, str]]:
-    titles = _dedupe_strings(
-        (criteria.job_titles if criteria else [])
-        + (profile.target_roles or [])
-    )[:5]
-    locs = _dedupe_strings(
-        (criteria.locations if criteria else [])
-        + (profile.target_locations or ["remote"])
-    )[:3]
-    if not titles:
-        titles = ["software engineer"]
+def build_search_queries(profile: "CandidateProfile", criteria: "JobCriteria | None") -> list[tuple[str, str]]:
+    titles = effective_job_titles(profile, criteria)
+    locs = effective_locations(profile, criteria)
     pairs: list[tuple[str, str]] = []
     for role in titles:
         for loc in locs:
@@ -47,8 +29,8 @@ def build_search_queries(profile: CandidateProfile, criteria: JobCriteria | None
 
 
 async def discover_jobs(
-    profile: CandidateProfile,
-    criteria: JobCriteria | None,
+    profile: "CandidateProfile",
+    criteria: "JobCriteria | None",
     search_fn,
 ) -> tuple[list[JobListing], list[str]]:
     """Search JSearch across title×location combos; dedupe by url or company|title."""

@@ -83,10 +83,16 @@ export default function CriteriaSettingsPage() {
       <form onSubmit={handleSave} className="card space-y-6">
         <div>
           <label className="text-sm font-medium text-foreground">Job titles (comma-separated)</label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Auto-filled from your resume on upload (latest 3 role titles). Edit here only if you want to search different titles.
+          </p>
           <input value={titles} onChange={(e) => setTitles(e.target.value)} className="input mt-2" />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground">Locations (comma-separated)</label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Auto-filled from your resume location (e.g. Dubai) plus Remote when still on defaults.
+          </p>
           <input value={locations} onChange={(e) => setLocations(e.target.value)} className="input mt-2" />
         </div>
         <div>

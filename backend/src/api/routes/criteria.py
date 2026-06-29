@@ -5,6 +5,7 @@ from src.api.deps import get_current_user, require_prime
 from src.models.job_criteria import JobCriteria
 from src.models.membership import UserAccount
 from src.services.data_store import data_store
+from src.scoring.criteria_sync import sync_criteria_from_resume
 
 router = APIRouter(prefix="/criteria", tags=["criteria"])
 
@@ -31,7 +32,16 @@ class CriteriaUpdate(BaseModel):
 
 @router.get("")
 async def get_criteria(user: UserAccount = Depends(get_current_user)):
-    return data_store.get_criteria(user.id)
+    criteria = data_store.get_criteria(user.id)
+    profile = data_store.get_profile(user.id)
+    if profile.target_roles:
+        synced = sync_criteria_from_resume(profile, criteria)
+        if synced.job_titles != criteria.job_titles or synced.locations != criteria.locations:
+            synced.id = user.id
+            synced.user_id = user.id
+            data_store.save_criteria(synced)
+            return synced
+    return criteria
 
 
 @router.put("")

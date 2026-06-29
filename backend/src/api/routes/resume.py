@@ -9,6 +9,7 @@ from src.parsers.resume_parser import extract_text_from_file, parse_profile_from
 from src.security.upload_validator import RESUME_EXTENSIONS, read_upload_limited
 from src.services.data_store import data_store
 from src.services.usage_service import usage_service
+from src.scoring.criteria_sync import sync_criteria_from_resume
 
 router = APIRouter(prefix="/resume", tags=["resume"])
 
@@ -30,6 +31,11 @@ async def upload_resume(
     if not updated.resume_template_settings:
         updated.resume_template_settings = DEFAULT_TEMPLATE.model_dump()
     data_store.save_profile(updated)
+    criteria = data_store.get_criteria(user.id)
+    criteria = sync_criteria_from_resume(updated, criteria)
+    criteria.id = user.id
+    criteria.user_id = user.id
+    data_store.save_criteria(criteria)
     return updated
 
 
