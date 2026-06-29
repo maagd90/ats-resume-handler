@@ -28,6 +28,9 @@ class OptimizerPipeline:
         review = await resume_agent.review(profile)
         proposal.resume_score = review.score
         proposal.resume_issues = [i.model_dump() for i in review.issues]
+        proposal.red_flags = [f.model_dump() for f in review.red_flags]
+        proposal.recruiter_checklist = review.recruiter_checklist
+        proposal.recruiter_feedback = review.recruiter_feedback
         proposal.impact_improvement_plan = build_impact_improvement_plan(profile, review.score.impact)
 
         if review.optimized_text and review.optimized_text != (profile.resume_raw_text or ""):

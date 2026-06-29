@@ -4,9 +4,11 @@ import AiPipelinePanel from "@/components/AiPipelinePanel";
 import GuidancePanel from "@/components/GuidancePanel";
 import ImpactImprovementPlan from "@/components/ImpactImprovementPlan";
 import IssueList from "@/components/IssueList";
+import RedFlagList from "@/components/RedFlagList";
+import RecruiterAppealPanel from "@/components/RecruiterAppealPanel";
 import ResumePreview from "@/components/ResumePreview";
+import ScoreBreakdown from "@/components/ScoreBreakdown";
 import ScoreGuidance from "@/components/ScoreGuidance";
-import ScoreRing from "@/components/ScoreRing";
 import UploadZone from "@/components/UploadZone";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -543,11 +545,13 @@ export default function OptimizePage() {
                     {proposal.resume_score && (
                       <div className="card space-y-4">
                         <ScoreGuidance compact />
-                        <div className="flex flex-wrap justify-around gap-4">
-                          <ScoreRing label="Overall" value={proposal.resume_score.overall} size={100} />
-                          <ScoreRing label="Keywords" value={proposal.resume_score.keywords} size={72} />
-                          <ScoreRing label="Impact" value={proposal.resume_score.impact} size={72} />
-                        </div>
+                        <ScoreBreakdown score={proposal.resume_score} compact />
+                      </div>
+                    )}
+                    {proposal.red_flags?.length > 0 && (
+                      <div className="card p-6">
+                        <h3 className="mb-3 font-semibold text-foreground">Recruiter red flags</h3>
+                        <RedFlagList flags={proposal.red_flags} />
                       </div>
                     )}
                     {proposal.impact_improvement_plan && (
@@ -557,8 +561,16 @@ export default function OptimizePage() {
                     )}
                     {proposal.resume_issues?.length > 0 && (
                       <div className="card">
+                        <h3 className="mb-3 font-semibold text-foreground">ATS issues</h3>
                         <IssueList issues={proposal.resume_issues} />
                       </div>
+                    )}
+                    {(proposal.recruiter_feedback || proposal.recruiter_checklist?.length > 0) && (
+                      <RecruiterAppealPanel
+                        score={proposal.resume_score?.recruiter_appeal}
+                        checklist={proposal.recruiter_checklist}
+                        feedback={proposal.recruiter_feedback}
+                      />
                     )}
                     <GuidancePanel
                       changes={proposal.linkedin_changes || []}

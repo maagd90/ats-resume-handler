@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -7,11 +8,19 @@ from fastapi.responses import JSONResponse
 from src.api.routes import agent, ai_info, applications, auth, billing, contact, criteria, jobs, linkedin, membership, optimizer, profile, proposals, resume
 from src.config import settings
 from src.db.database import init_db
+from src.scoring.job_matcher import _get_embedding_model
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    model = _get_embedding_model()
+    if model:
+        logger.info("Embedding model loaded")
+    else:
+        logger.warning("Embeddings DISABLED — matching degraded")
     yield
 
 

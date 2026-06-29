@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import uuid
 from datetime import datetime, timedelta
 
@@ -7,7 +8,7 @@ from src.agents.match_agent import rank_jobs_with_criteria, score_job_with_crite
 from src.agents.tailor_agent import tailor_agent
 from src.apply.apply_router import apply_router
 from src.models.application import Application, ApplicationStatus
-from src.models.profile import JobListing
+from src.scoring.job_discovery import discover_jobs
 from src.services.data_store import data_store
 from src.services.jsearch_client import jsearch_client
 from src.models.resume_template import DEFAULT_TEMPLATE, ResumeTemplateSettings
@@ -49,95 +50,97 @@ def run_agent_cycle(user_id: str = "default"):
 
     processed = 0
     try:
-        for title in criteria.job_titles[:3]:
-            for location in criteria.locations[:2]:
-                query = f"{title} jobs in {location}"
-                jobs = _run_async(jsearch_client.search(query))
-                ranked = rank_jobs_with_criteria(profile, jobs, criteria)
+        jobs, _queries = _run_async(discover_jobs(profile, criteria, jsearch_client.search))
+        ranked = rank_jobs_with_criteria(profile, jobs, criteria)
 
-                for job in ranked:
-                    if data_store.has_seen_job(user_id, job.id):
-                        continue
-                    data_store.mark_job_seen(user_id, job.id)
+        for job in ranked:
+            if data_store.has_seen_job(user_id, job.id):
+                continue
+            data_store.mark_job_seen(user_id, job.id)
 
-                    result = score_job_with_criteria(profile, job, criteria)
-                    app = Application(
-                        id=str(uuid.uuid4()),
-                        user_id=user_id,
-                        job_id=job.id,
-                        job_title=job.title,
-                        company=job.company,
-                        job_url=job.apply_link or "",
-                        job_description=job.description,
-                        fit_score=result.fit_score,
-                        status=ApplicationStatus.DISCOVERED,
-                    )
+            result = score_job_with_criteria(profile, job, criteria)
+            app = Application(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                job_id=job.id,
+                job_title=job.title,
+                company=job.company,
+                job_url=job.apply_link or "",
+                job_description=job.description,
+                fit_score=result.fit_score,
+                status=ApplicationStatus.DISCOVERED,
+            )
 
-                    if result.fit_score < criteria.min_fit_score:
-                        app.status = ApplicationStatus.SCORED
-                        data_store.save_application(app)
-                        continue
+            if result.fit_score < criteria.min_fit_score:
+                app.status = ApplicationStatus.SCORED
+                data_store.save_application(app)
+                continue
 
-                    app.status = ApplicationStatus.PREPARING
-                    data_store.save_application(app)
+            app.status = ApplicationStatus.PREPARING
+            data_store.save_application(app)
 
-                    tailored = _run_async(tailor_agent.tailor(profile, job.title, job.description))
-                    app_dir = resume_renderer.application_dir(app.id)
-                    tmpl = DEFAULT_TEMPLATE
-                    if profile.resume_template_settings:
-                        tmpl = ResumeTemplateSettings.model_validate(profile.resume_template_settings)
-                    renderer = ResumeRenderer(tmpl)
-                    resume_path = renderer.render_docx(profile, tailored, app_dir / "resume.docx", tmpl)
+            tailored = _run_async(tailor_agent.tailor(profile, job.title, job.description))
+            app_dir = resume_renderer.application_dir(app.id)
+            tmpl = DEFAULT_TEMPLATE
+            if profile.resume_template_settings:
+                tmpl = ResumeTemplateSettings.model_validate(profile.resume_template_settings)
+            renderer = ResumeRenderer(tmpl)
+            resume_path = renderer.render_docx(profile, tailored, app_dir / "resume.docx", tmpl)
 
-                    cover = _run_async(
-                        cover_letter_agent.generate(
-                            profile,
-                            job.title,
-                            job.company,
-                            job.description,
-                            tailored.get("tailored_text", ""),
-                        )
-                    )
-                    cover_path = resume_renderer.render_cover_letter_txt(cover.get("body", ""), app_dir / "cover_letter.txt")
+            cover = _run_async(
+                cover_letter_agent.generate(
+                    profile,
+                    job.title,
+                    job.company,
+                    job.description,
+                    tailored.get("tailored_text", ""),
+                )
+            )
+            cover_path = resume_renderer.render_cover_letter_txt(cover.get("body", ""), app_dir / "cover_letter.txt")
 
-                    app.tailored_resume_path = str(resume_path)
-                    app.cover_letter_path = str(cover_path)
-                    app.cover_letter_text = cover.get("body", "")
-                    app.status = ApplicationStatus.READY
+            jd_hash = hashlib.sha256(job.description.encode()).hexdigest()[:8]
+            app.tailored_resume_path = str(resume_path)
+            app.cover_letter_path = str(cover_path)
+            app.cover_letter_text = cover.get("body", "")
+            app.status = ApplicationStatus.READY
+            data_store.log_activity(
+                f"tailored=True jd_hash={jd_hash} resume_path={resume_path.name} for {job.title}",
+                user_id=user_id,
+            )
 
-                    if criteria.require_approval:
-                        app.status = ApplicationStatus.QUEUED
-                        data_store.save_application(app)
-                        data_store.log_activity(f"Queued for approval: {job.title} at {job.company}", user_id=user_id)
-                        processed += 1
-                        continue
+            if criteria.require_approval:
+                app.status = ApplicationStatus.QUEUED
+                data_store.save_application(app)
+                data_store.log_activity(f"Queued for approval: {job.title} at {job.company}", user_id=user_id)
+                processed += 1
+                continue
 
-                    if applied_today + processed >= criteria.max_applications_per_day:
-                        app.status = ApplicationStatus.QUEUED
-                        data_store.save_application(app)
-                        break
+            if applied_today + processed >= criteria.max_applications_per_day:
+                app.status = ApplicationStatus.QUEUED
+                data_store.save_application(app)
+                break
 
-                    app = apply_router.execute(
-                        app,
-                        profile,
-                        cover.get("subject", f"Application for {job.title}"),
-                        cover.get("body", ""),
-                        criteria.require_approval,
-                        user_id=user_id,
-                    )
-                    if app.status == ApplicationStatus.APPLIED:
-                        app.applied_at = datetime.utcnow()
-                        applied_today += 1
-                        data_store.log_activity(
-                            f"Applied: {job.title} at {job.company} via {app.apply_method}", user_id=user_id
-                        )
-                    elif app.status == ApplicationStatus.FAILED:
-                        data_store.log_activity(f"Apply failed: {job.title}", "error", user_id=user_id)
-                    else:
-                        data_store.log_activity(f"Queued: {job.title} at {job.company}", user_id=user_id)
+            app = apply_router.execute(
+                app,
+                profile,
+                cover.get("subject", f"Application for {job.title}"),
+                cover.get("body", ""),
+                criteria.require_approval,
+                user_id=user_id,
+            )
+            if app.status == ApplicationStatus.APPLIED:
+                app.applied_at = datetime.utcnow()
+                applied_today += 1
+                data_store.log_activity(
+                    f"Applied: {job.title} at {job.company} via {app.apply_method}", user_id=user_id
+                )
+            elif app.status == ApplicationStatus.FAILED:
+                data_store.log_activity(f"Apply failed: {job.title}", "error", user_id=user_id)
+            else:
+                data_store.log_activity(f"Queued: {job.title} at {job.company}", user_id=user_id)
 
-                    data_store.save_application(app)
-                    processed += 1
+            data_store.save_application(app)
+            processed += 1
 
         status.last_run_at = datetime.utcnow()
         status.next_run_at = status.last_run_at + timedelta(hours=criteria.search_interval_hours)

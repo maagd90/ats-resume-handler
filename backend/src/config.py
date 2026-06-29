@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     platform_ai_enabled: bool = True
+    embeddings_enabled: bool = True
+    embedding_model_name: str = "all-MiniLM-L6-v2"
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":

@@ -78,6 +78,28 @@ def _extract_docx(file_path: Path) -> str:
     return "\n".join(paragraphs)
 
 
+def detect_layout_features(file_path: Path | None) -> dict[str, bool]:
+    """Inspect DOCX structure for tables, multi-column sections, and embedded images."""
+    result = {"has_tables": False, "has_multi_column": False, "has_images": False}
+    if not file_path or not file_path.exists() or file_path.suffix.lower() != ".docx":
+        return result
+    try:
+        doc = Document(file_path)
+        body = doc.element.body
+        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        result["has_tables"] = bool(body.findall(".//w:tbl", ns))
+        for sect in body.findall(".//w:sectPr", ns):
+            cols = sect.find("w:cols", ns)
+            if cols is not None:
+                num = cols.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}num")
+                if num and int(num) > 1:
+                    result["has_multi_column"] = True
+        result["has_images"] = bool(body.findall(".//w:drawing", ns) or body.findall(".//w:pict", ns))
+    except Exception:
+        pass
+    return result
+
+
 def parse_profile_from_text(text: str, profile_id: str) -> CandidateProfile:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     contact = _extract_contact(text, lines)

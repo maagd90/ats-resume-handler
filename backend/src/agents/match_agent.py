@@ -45,11 +45,15 @@ def passes_criteria_filters(job: JobListing, criteria: JobCriteria) -> bool:
         if company.lower() in job.company.lower():
             return False
     if criteria.required_skills:
+        jd_text = f"{job.title} {job.description}".lower()
         jd_skills = extract_skills_from_text(job.description)
-        profile_required = {s.lower() for s in criteria.required_skills}
-        if not profile_required.intersection(jd_skills.union(set(s.lower() for s in criteria.required_skills))):
-            if not any(skill.lower() in text for skill in criteria.required_skills):
-                return False
+
+        def present(skill: str) -> bool:
+            s = skill.lower()
+            return s in jd_skills or s in jd_text
+
+        if not all(present(s) for s in criteria.required_skills):
+            return False
     if criteria.remote_only and job.location and "remote" not in job.location.lower():
         return False
     return True

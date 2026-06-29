@@ -1,0 +1,25 @@
+Alex Johnson
+alex@email.com | (555) 987-6543
+
+SUMMARY
+QA professional with experience in testing.
+
+SKILLS
+Manual testing, Jira
+
+EXPERIENCE
+Jan 2022 — Jun 2022
+QA Analyst | StartupA
+- I led manual testing for the mobile app release
+- Responsible for regression testing before each sprint
+
+Jan 2020 — Mar 2021
+Tester | StartupB
+- Worked on test plans for web applications
+
+Jun 2021 — Dec 2021
+Contract QA | StartupC
+- Duties included smoke testing and bug reporting
+
+EDUCATION
+Associate Degree | Community College | 2019

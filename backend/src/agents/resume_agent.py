@@ -2,10 +2,12 @@ import json
 from pathlib import Path
 
 from src.models.profile import ATSIssue, ATSScoreBreakdown, CandidateProfile, ResumeReviewResult
-from src.parsers.resume_parser import parse_profile_from_text
+from src.parsers.resume_parser import detect_layout_features, parse_profile_from_text
 from src.scoring.ats_checker import audit_resume, infer_target_roles
 from src.scoring.impact_advisor import build_impact_improvement_plan
 from src.scoring.job_matcher import build_profile_document, compute_embedding
+from src.scoring.recruiter_appeal import score_recruiter_appeal
+from src.scoring.red_flags import detect_red_flags
 from src.services.fact_validator import build_source_facts_block
 from src.services.llm_client import llm_client
 
@@ -20,19 +22,35 @@ class ResumeAgent:
 
     async def review(self, profile: CandidateProfile) -> ResumeReviewResult:
         text = profile.resume_raw_text or build_profile_document(profile)
-        score, issues = audit_resume(text, profile)
+        layout = detect_layout_features(Path(profile.resume_file_path) if profile.resume_file_path else None)
+        score, issues = audit_resume(text, profile, layout)
+        red_flags = detect_red_flags(profile, text)
+        recruiter_appeal, recruiter_checklist = score_recruiter_appeal(profile)
         llm_result = await self._llm_review(text, profile)
         optimized_text = llm_result.get("optimized_text", text)
         section_feedback = llm_result.get("section_feedback", {})
         if llm_result.get("summary") and not section_feedback.get("summary"):
             section_feedback["summary"] = llm_result["summary"]
+        recruiter_feedback = llm_result.get("recruiter_feedback")
+        if isinstance(recruiter_feedback, dict):
+            recruiter_feedback = " ".join(str(v) for v in recruiter_feedback.values())
         return ResumeReviewResult(
             profile=profile,
-            score=score,
+            score=ATSScoreBreakdown(
+                parseability=score.parseability,
+                structure=score.structure,
+                keywords=score.keywords,
+                impact=score.impact,
+                overall=score.overall,
+                recruiter_appeal=recruiter_appeal,
+            ),
             issues=issues,
             section_feedback=section_feedback,
             optimized_text=optimized_text,
             impact_improvement_plan=build_impact_improvement_plan(profile, score.impact),
+            red_flags=red_flags,
+            recruiter_checklist=recruiter_checklist,
+            recruiter_feedback=recruiter_feedback,
         )
 
     async def optimize(self, profile: CandidateProfile) -> str:

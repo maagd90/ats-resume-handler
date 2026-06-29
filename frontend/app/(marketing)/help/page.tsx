@@ -3,6 +3,7 @@ import Link from "next/link";
 const GUIDES = [
   { id: "upload", title: "Upload your resume", body: "Sign in, go to Resume or Optimize, and upload PDF/DOCX/TXT. We parse structure and run ATS checks." },
   { id: "ats-score", title: "Read your ATS score", body: "Aim for 75–80% for your target role. Scores near 100% may indicate keyword stuffing. Fix high-impact issues first." },
+  { id: "recruiter-appeal", title: "Recruiter appeal score", body: "Separate from ATS parsing — measures summary strength, quantified outcomes, top-third impact, and conciseness. Hiring managers skim the top third in ~7 seconds." },
   { id: "layout", title: "Pick a layout", body: "Visit Templates to preview original PassATS presets. Apply one before export for consistent Word output." },
   { id: "tailor", title: "Tailor to a job (Prime)", body: "Paste a job description on Jobs to see matched and missing skills. Prime tailors bullets to the JD using verified facts only." },
   { id: "linkedin", title: "LinkedIn guidance", body: "Upload a LinkedIn PDF export or paste text. Review headline, About, and experience suggestions before copying to LinkedIn." },

@@ -1,0 +1,280 @@
+# QA / Testing
+selenium
+cypress
+playwright
+puppeteer
+appium
+testng
+junit
+pytest
+jest
+mocha
+cucumber
+bdd
+tdd
+test automation
+manual testing
+regression testing
+smoke testing
+integration testing
+api testing
+performance testing
+load testing
+stress testing
+security testing
+penetration testing
+accessibility testing
+usability testing
+exploratory testing
+uat
+qa
+quality assurance
+sdet
+software development engineer in test
+test planning
+test cases
+test scripts
+defect tracking
+bug reporting
+jira
+confluence
+testrail
+qtest
+zephyr
+postman
+rest assured
+soapui
+karate
+robot framework
+hp alm
+quality center
+hp uft
+qtp
+soap ui
+jmeter
+gatling
+k6
+locust
+browserstack
+saucelabs
+lambdatest
+cross-browser testing
+mobile testing
+ios testing
+android testing
+# DevOps / CI
+ci/cd
+jenkins
+github actions
+gitlab ci
+circleci
+travis ci
+azure devops
+teamcity
+bamboo
+docker
+kubernetes
+helm
+terraform
+ansible
+puppet
+chef
+aws
+azure
+gcp
+google cloud
+linux
+bash
+shell scripting
+powershell
+nginx
+apache
+# Languages
+python
+javascript
+typescript
+java
+c#
+c++
+go
+golang
+rust
+ruby
+php
+swift
+kotlin
+scala
+r
+matlab
+sql
+pl/sql
+t-sql
+# Frameworks / Backend
+react
+angular
+vue
+vue.js
+next.js
+node
+node.js
+express
+fastapi
+django
+flask
+spring
+spring boot
+hibernate
+asp.net
+.net
+laravel
+rails
+graphql
+rest
+rest api
+microservices
+# Databases
+postgres
+postgresql
+mysql
+mongodb
+redis
+elasticsearch
+dynamodb
+cassandra
+oracle
+sql server
+sqlite
+snowflake
+databricks
+# Data / ML
+machine learning
+deep learning
+tensorflow
+pytorch
+scikit-learn
+pandas
+numpy
+spark
+apache spark
+hadoop
+kafka
+airflow
+dbt
+power bi
+tableau
+looker
+etl
+data analysis
+data engineering
+data science
+nlp
+computer vision
+# Mobile
+react native
+flutter
+xamarin
+# Security
+oauth
+jwt
+ssl
+tls
+encryption
+owasp
+soc 2
+hipaa
+pci dss
+gdpr
+# Agile / PM
+agile
+scrum
+kanban
+safe
+jira
+confluence
+project management
+stakeholder management
+# Soft skills
+leadership
+communication
+collaboration
+problem solving
+critical thinking
+time management
+mentoring
+presentation
+negotiation
+conflict resolution
+team player
+detail-oriented
+results-driven
+# Business / Other
+salesforce
+sap
+workday
+servicenow
+figma
+sketch
+adobe xd
+ux
+ui design
+product management
+business analysis
+requirements gathering
+stakeholder
+gaap
+six sigma
+lean
+process improvement
+customer success
+technical writing
+documentation
+git
+github
+gitlab
+bitbucket
+svn
+mercurial
+html
+css
+sass
+tailwind
+webpack
+vite
+npm
+yarn
+pnpm
+linux administration
+networking
+tcp/ip
+dns
+vpn
+firewall
+vmware
+virtualization
+cloud computing
+serverless
+lambda
+s3
+ec2
+rds
+cloudformation
+pulumi
+prometheus
+grafana
+datadog
+splunk
+elk stack
+logstash
+kibana
+new relic
+sentry
+# Certs (common mentions)
+pmp
+csm
+aws certified
+azure certified
+gcp certified
+cissp
+comptia
+itil
+istqb

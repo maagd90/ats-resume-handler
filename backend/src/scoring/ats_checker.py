@@ -48,9 +48,13 @@ ACTION_VERBS = {
 }
 
 
-def audit_resume(text: str, profile: CandidateProfile) -> tuple[ATSScoreBreakdown, list[ATSIssue]]:
+def audit_resume(
+    text: str,
+    profile: CandidateProfile,
+    layout_features: dict | None = None,
+) -> tuple[ATSScoreBreakdown, list[ATSIssue]]:
     issues: list[ATSIssue] = []
-    parseability = _score_parseability(text, issues)
+    parseability = _score_parseability(text, issues, layout_features)
     structure = _score_structure(text, profile, issues)
     keywords = _score_keywords(profile, issues)
     impact = _score_impact(text, profile, issues)
@@ -67,7 +71,7 @@ def audit_resume(text: str, profile: CandidateProfile) -> tuple[ATSScoreBreakdow
     )
 
 
-def _score_parseability(text: str, issues: list[ATSIssue]) -> float:
+def _score_parseability(text: str, issues: list[ATSIssue], layout_features: dict | None = None) -> float:
     score = 100.0
     if has_problematic_characters(text):
         score -= 5
@@ -89,14 +93,15 @@ def _score_parseability(text: str, issues: list[ATSIssue]) -> float:
                 suggestion="Replace tabs with standard line breaks.",
             )
         )
-    if re.search(r"(table|column|graphic|image)", text, re.I):
+    layout = layout_features or {}
+    if layout.get("has_tables") or layout.get("has_multi_column") or layout.get("has_images"):
         score -= 15
         issues.append(
             ATSIssue(
                 category="parseability",
                 severity="high",
-                message="Potential tables, columns, or graphics detected.",
-                suggestion="Use a single-column, text-only layout.",
+                message="Layout features detected (tables, columns, or images).",
+                suggestion="Use a single-column, text-only layout for best ATS parsing.",
             )
         )
     return max(score, 0)

@@ -37,4 +37,7 @@ class OptimizationProposal(BaseModel):
     validation_warnings: list[str] = Field(default_factory=list)
     optimized_resume_path: str | None = None
     linkedin_pack_path: str | None = None
+    red_flags: list[dict] = Field(default_factory=list)
+    recruiter_checklist: list[dict] = Field(default_factory=list)
+    recruiter_feedback: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -65,6 +65,15 @@ class ATSScoreBreakdown(BaseModel):
     keywords: float
     impact: float
     overall: float
+    recruiter_appeal: Optional[float] = None
+
+
+class RedFlag(BaseModel):
+    category: str
+    severity: str
+    message: str
+    suggestion: str
+    evidence: Optional[str] = None
 
 
 class ResumeReviewResult(BaseModel):
@@ -74,6 +83,9 @@ class ResumeReviewResult(BaseModel):
     section_feedback: dict[str, str]
     optimized_text: str
     impact_improvement_plan: dict | None = None
+    red_flags: list[RedFlag] = Field(default_factory=list)
+    recruiter_checklist: list[dict] = Field(default_factory=list)
+    recruiter_feedback: Optional[str] = None
 
 
 class LinkedInOptimizationResult(BaseModel):
